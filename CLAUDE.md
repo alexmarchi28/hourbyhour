@@ -35,6 +35,9 @@ Timeline.kt           logica pura, testata su JVM: eventi → giorni, fascia ora
 GoogleColors.kt       logica pura, testata su JVM: colori del provider → colori mostrati da Google Calendar
 WidgetLayout.kt       logica pura, testata su JVM: cosa mostra il widget e dove (frazioni delle colonne)
 EventColors.kt        logica pura, testata su JVM: colori di riempimento e testo degli eventi, per tema
+WidgetSettings.kt     logica pura, testata su JVM: impostazioni di un widget (trasparenza dello sfondo)
+WidgetSettingsStore.kt  salva le impostazioni per id del widget (SharedPreferences), cancellate in onDeleted
+WidgetSettingsActivity.kt  schermata impostazioni di un widget, aperta dal launcher, con anteprima sopra lo sfondo della Home
 CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse)
 WidgetViews.kt        traduce un WidgetLayout in RemoteViews, senza prendere decisioni
 WidgetUpdater.kt      carica gli eventi, aggiorna i widget, programma il prossimo aggiornamento
@@ -43,7 +46,7 @@ CalendarChangeJob.kt  JobService con trigger sul content URI del calendario
 MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", anteprima del widget
 ```
 
-`Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt` ed `EventColors.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `splitIntoDays` → `Snapshot` → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
+`Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt` e `WidgetSettings.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `splitIntoDays` → `Snapshot` → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
 
 Il numero di giorni non è fissato nella logica (`layoutWidget` e `splitIntoDays` accettano qualsiasi numero, almeno 1): oggi è solo la costante `WidgetUpdater.DAY_COUNT`.
 
@@ -64,6 +67,15 @@ Regole sulla lunghezza degli eventi (in `WidgetLayout.kt`):
 - I riquadri "tutto il giorno" e quelli con orario condividono separatore e margini (`dimens.xml`): ogni giorno della riga "tutto il giorno" è una `banner_cell` identica, così i bordi coincidono con la griglia.
 
 `CalendarSource` scarta i calendari nascosti, gli eventi cancellati e gli inviti rifiutati.
+
+## Impostazioni per widget
+
+Ogni widget ha le sue impostazioni (`WidgetSettings`), salvate per id del widget. Il launcher apre `WidgetSettingsActivity` (`android:configure` in `widget_info.xml`, con `reconfigurable|configuration_optional`): sul launcher Motorola è l'ingranaggio che compare mentre ridimensioni il widget. La schermata non si apre quando aggiungi un widget, perché i valori predefiniti vanno bene.
+
+- **Trasparenza dello sfondo:** da 0 a 100% a passi di 5, predefinita 5% (l'alfa `0xF2` di prima). In `colors.xml` lo sfondo è **opaco**: `WidgetViews` applica l'alfa di ogni widget come tint della forma arrotondata, una variante per tema.
+- Il testo segue il tema chiaro/scuro e non ha ombre (scelta dell'utente): sta a lui scegliere uno sfondo della Home adatto, oppure poca trasparenza.
+- Nuove impostazioni (ad esempio il numero di giorni) vanno in `WidgetSettings` e in questa schermata.
+- `MainActivity` mostra l'anteprima con le impostazioni predefinite.
 
 ## Colori degli eventi
 
@@ -114,4 +126,4 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 
 ## Fuori scope per ora (non implementare senza richiesta esplicita)
 
-Eventi cliccabili o qualunque azione al tocco, Material You e colori dinamici, configurazione del widget (numero di giorni, fascia oraria), login Google e Calendar API.
+Eventi cliccabili o qualunque azione al tocco, Material You e colori dinamici, altre impostazioni del widget oltre alla trasparenza (numero di giorni, fascia oraria), ombre o colore del testo adattati allo sfondo, login Google e Calendar API.
