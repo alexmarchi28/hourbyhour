@@ -57,7 +57,7 @@ Regole sulla visualizzazione (in `Timeline.kt`):
 
 - Eventi tutto il giorno ed eventi con orario lunghi **24 ore o più** vanno nella riga in alto (banner) di ogni giorno che toccano, come fa Google Calendar. Gli altri vengono tagliati sui giorni che attraversano.
 - Gli eventi tutto il giorno sono salvati a mezzanotte **UTC**: le loro date si leggono in UTC, non nel fuso locale.
-- La fascia oraria va dall'inizio del primo evento con orario alla fine dell'ultimo, su tutti e tre i giorni, allargata ad almeno 6 ore. Senza eventi: 8–20.
+- La fascia oraria va dall'inizio del primo evento con orario alla fine dell'ultimo, su tutti i giorni mostrati, allargata ad almeno 6 ore. Senza eventi: 8–20.
 - Gli eventi sovrapposti si dividono la larghezza del giorno in colonne, in base agli **orari reali**: due eventi che non si sovrappongono non stanno mai affiancati (un evento senza durata conta 1 minuto).
 
 Regole sulla lunghezza degli eventi (in `WidgetLayout.kt`):
@@ -105,7 +105,7 @@ Aggiornamenti: alla aggiunta e al ridimensionamento del widget, quando cambia il
 
 ## Verifica sul telefono
 
-I test JVM coprono la logica pura (`Timeline`, `GoogleColors`, `WidgetLayout`, `EventColors`, `nextRefreshTime`), non le RemoteViews. Ogni modifica al widget va provata sul telefono: installa, forza l'aggiornamento e guarda il risultato (`adb exec-out screencap -p > shot.png`). Prova anche dimensioni diverse (ridimensionando il widget) e il tema chiaro (`adb shell cmd uimode night no`, poi ripristina con `yes`). L'anteprima nell'app usa le stesse `RemoteViews`, ma non sostituisce la prova sul launcher.
+I test JVM coprono la logica pura (`Timeline`, `GoogleColors`, `WidgetLayout`, `EventColors`, `WidgetSettings`, `nextRefreshTime`), non le RemoteViews. Ogni modifica al widget va provata sul telefono: installa, forza l'aggiornamento e guarda il risultato (`adb exec-out screencap -p > shot.png`). Prova anche dimensioni diverse (ridimensionando il widget) e il tema chiaro (`adb shell cmd uimode night no`, poi ripristina con `yes`). L'anteprima nell'app usa le stesse `RemoteViews`, ma non sostituisce la prova sul launcher.
 
 Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (stesso tema) e leggi il colore di un pixel al centro di un evento, lontano dal testo.
 
@@ -119,7 +119,7 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 
 - Identificatori, commenti e messaggi di commit in **inglese**. Testi mostrati all'utente in **italiano** (`strings.xml`).
 - Niente stato globale: gli `object` (`WidgetUpdater`, `CalendarSource`) non hanno stato.
-- Lettura del calendario e costruzione del widget fuori dal main thread (`goAsync` nel provider, thread nel job e nell'activity).
+- Lettura del calendario e costruzione del widget fuori dal main thread (`goAsync` nel provider, thread nel job e in `WidgetPreview`).
 
 ## Git
 
