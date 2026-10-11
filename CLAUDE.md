@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-**HourByHour** (prima "Tre Giorni"; la cartella del progetto ha ancora il vecchio nome) è un'app Android con un widget per la schermata Home che mostra **i prossimi tre giorni, ora per ora**, con gli eventi di Google Calendar nella loro fascia oraria. Il widget è di sola lettura: nessuna azione al tocco.
+**HourByHour** (prima "Tre Giorni"; la cartella del progetto ha ancora il vecchio nome) è un'app Android con un widget per la schermata Home che mostra **da 1 a 7 giorni (da oggi, o la settimana da lunedì), ora per ora**, con gli eventi di Google Calendar nella loro fascia oraria. Il widget è di sola lettura: nessuna azione al tocco.
 
 Gli eventi si leggono da `CalendarContract`, il calendario del telefono che Google Calendar tiene sincronizzato. **Niente login Google e niente Calendar API**: l'app non ha il permesso INTERNET e i dati non escono dal telefono.
 
@@ -31,11 +31,11 @@ Prima di aggiungere una dipendenza, chiedi.
 ## Architettura
 
 ```
-Timeline.kt           logica pura, testata su JVM: eventi → giorni, fascia oraria, colonne per le sovrapposizioni
+Timeline.kt           logica pura, testata su JVM: Agenda (eventi letti), eventi → giorni, fascia oraria, colonne per le sovrapposizioni
 GoogleColors.kt       logica pura, testata su JVM: colori del provider → colori mostrati da Google Calendar
 WidgetLayout.kt       logica pura, testata su JVM: cosa mostra il widget e dove (frazioni delle colonne)
 EventColors.kt        logica pura, testata su JVM: colori di riempimento e testo degli eventi, per tema
-WidgetSettings.kt     logica pura, testata su JVM: impostazioni di un widget (trasparenza dello sfondo)
+WidgetSettings.kt     logica pura, testata su JVM: impostazioni di un widget (trasparenza, numero di giorni, partenza da lunedì)
 WidgetSettingsStore.kt  salva le impostazioni per id del widget (SharedPreferences), cancellate in onDeleted
 WidgetSettingsActivity.kt  schermata impostazioni di un widget, aperta dal launcher, con anteprima sopra lo sfondo della Home
 CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse)
@@ -47,9 +47,9 @@ MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", antepr
 WidgetPreview.kt      anteprima del widget nelle schermate dell'app (stesse RemoteViews del launcher)
 ```
 
-`Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt` e `WidgetSettings.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `splitIntoDays` → `Snapshot` → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
+`Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt` e `WidgetSettings.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni di ogni widget) → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
 
-Il numero di giorni non è fissato nella logica (`layoutWidget` e `splitIntoDays` accettano qualsiasi numero, almeno 1): oggi è solo la costante `WidgetUpdater.DAY_COUNT`.
+Il calendario si legge **una volta** per due settimane da lunedì (`Agenda.DAYS`), una finestra che copre ogni impostazione possibile (fino a 7 giorni da oggi, o la settimana da lunedì, questa o la prossima); ogni widget e l'anteprima ne prendono i propri giorni senza rileggere il calendario. La fascia oraria si calcola solo sui giorni mostrati.
 
 **Non rinominare `HourByHourWidget` né il package `it.hourbyhour`** (né l'`applicationId`): il nome della classe identifica il widget per il launcher, e cambiarlo fa sparire i widget già aggiunti alla Home; l'`applicationId` non si può cambiare dopo la pubblicazione sul Play Store. Sono stati rinominati una sola volta, da `ThreeDaysWidget`/`it.tregiorni`, prima di qualsiasi pubblicazione.
 
@@ -75,7 +75,9 @@ Ogni widget ha le sue impostazioni (`WidgetSettings`), salvate per id del widget
 
 - **Trasparenza dello sfondo:** da 0 a 100% a passi di 5, predefinita 5% (l'alfa `0xF2` di prima). In `colors.xml` lo sfondo è **opaco**: `WidgetViews` applica l'alfa di ogni widget come tint della forma arrotondata, una variante per tema.
 - Il testo segue il tema chiaro/scuro e non ha ombre (scelta dell'utente): sta a lui scegliere uno sfondo della Home adatto, oppure poca trasparenza.
-- Nuove impostazioni (ad esempio il numero di giorni) vanno in `WidgetSettings` e in questa schermata.
+- **Numero di giorni:** da 1 a 7, predefinito 3.
+- **Inizia da lunedì:** vale da 5 giorni in su (sotto resta salvato ma non ha effetto, e l'interruttore è disattivato). Quando i giorni scelti della settimana sono finiti (sabato e domenica con 5 giorni, domenica con 6) si mostra la **settimana successiva**; con 7 giorni sempre la settimana in corso. La regola è in `WidgetSettings.firstDay`.
+- Nuove impostazioni vanno in `WidgetSettings`, in `WidgetSettingsStore` (con la cancellazione in `delete`) e in questa schermata.
 - `MainActivity` mostra l'anteprima (`WidgetPreview`) con le impostazioni predefinite.
 
 ## Colori degli eventi
@@ -94,7 +96,7 @@ Nel widget ogni colore di evento si imposta per **entrambi i temi** (`setColorSt
 **Non usare bitmap né dimensioni assolute.** I launcher possono dichiarare una dimensione diversa da quella reale: il launcher Motorola dichiara circa 3/4 dell'altezza vera, quindi una bitmap viene stirata. Il widget è fatto di layout posizionati con i **pesi**:
 
 - Un `LinearLayout` con `weightSum = S` e un solo figlio con `layout_weight = 1` dà al figlio 1/S dello spazio; la `gravity` decide da che lato. Due livelli annidati posizionano un intervallo [da, a] (vedi `event.xml` e `setWeightSums` in `WidgetViews`).
-- L'altezza dichiarata dal launcher serve solo per stime: densità delle etichette delle ore, altezza minima degli eventi brevi, numero di righe di testo.
+- Le dimensioni dichiarate dal launcher (`WidgetSize`) servono solo per stime. L'altezza (sbagliata sul Motorola) decide densità delle etichette delle ore, barretta minima, livello del titolo e numero di righe. La larghezza (affidabile) decide le intestazioni ("Lun 12", poi "L 12", poi "12") e se un titolo può andare a capo: se la parola più lunga non sta nel riquadro, una riga sola con "…", perché Android spezzerebbe la parola a caso. La larghezza del testo è stimata con una media per carattere (`CHAR_WIDTH_EM`).
 - Nei layout dei widget si possono usare solo le classi ammesse da `RemoteViews`: **niente `View` né `Space`**, per spaziatori e linee usa `FrameLayout`.
 - Il launcher può riapplicare le nuove `RemoteViews` sopra quelle vecchie invece di ricrearle: i contenitori riempiti a runtime vanno svuotati con `removeAllViews` e devono contenere **solo** view aggiunte a runtime.
 - Colori statici in `values/colors.xml` e `values-night/colors.xml`: il widget segue subito il tema di sistema. In codice si impostano solo i colori degli eventi, con una variante per tema (vedi "Colori degli eventi").
@@ -127,4 +129,4 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 
 ## Fuori scope per ora (non implementare senza richiesta esplicita)
 
-Eventi cliccabili o qualunque azione al tocco, Material You e colori dinamici, altre impostazioni del widget oltre alla trasparenza (numero di giorni, fascia oraria), ombre o colore del testo adattati allo sfondo, login Google e Calendar API.
+Eventi cliccabili o qualunque azione al tocco, Material You e colori dinamici, altre impostazioni del widget (ad esempio la fascia oraria fissa), ombre o colore del testo adattati allo sfondo, login Google e Calendar API.
