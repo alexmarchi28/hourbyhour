@@ -17,6 +17,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Opened by the launcher to change the settings of a widget on the home screen. -->
+        <activity
+            android:name=".WidgetSettingsActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/widget_settings_title"
+            android:taskAffinity=""
+            android:theme="@style/Theme.TreGiorni.WidgetSettings">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".ThreeDaysWidget"
             android:exported="true"

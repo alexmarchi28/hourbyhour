@@ -12,4 +12,9 @@
     <string name="open_settings">Apri le impostazioni dell\'app</string>
     <string name="add_widget">Aggiungi il widget alla Home</string>
     <string name="preview">Anteprima</string>
+
+    <string name="widget_settings_title">Impostazioni widget</string>
+    <string name="transparency_label">Trasparenza dello sfondo</string>
+    <string name="transparency_value">%1$d%%</string>
+    <string name="done">Fatto</string>
 </resources>
