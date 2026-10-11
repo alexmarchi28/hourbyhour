@@ -1,4 +1,4 @@
-package it.tregiorni
+package it.hourbyhour
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -8,7 +8,7 @@ import android.os.Bundle
 import kotlin.concurrent.thread
 
 /** The home screen widget. It only displays events: it has no click actions. */
-class ThreeDaysWidget : AppWidgetProvider() {
+class HourByHourWidget : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
@@ -51,6 +51,6 @@ class ThreeDaysWidget : AppWidgetProvider() {
     }
 
     companion object {
-        const val ACTION_REFRESH = "it.tregiorni.action.REFRESH"
+        const val ACTION_REFRESH = "it.hourbyhour.action.REFRESH"
     }
 }

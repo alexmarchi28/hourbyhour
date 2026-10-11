@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Shows the home screen wallpaper behind the window, so the preview looks like the real widget. -->
-    <style name="Theme.TreGiorni.WidgetSettings" parent="@android:style/Theme.DeviceDefault.DayNight">
+    <style name="Theme.HourByHour.WidgetSettings" parent="@android:style/Theme.DeviceDefault.DayNight">
         <item name="android:windowShowWallpaper">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>

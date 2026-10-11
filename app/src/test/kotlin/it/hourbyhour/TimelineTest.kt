@@ -1,4 +1,4 @@
-package it.tregiorni
+package it.hourbyhour
 
 import java.time.LocalDate
 import java.time.LocalDateTime

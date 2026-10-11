@@ -1,4 +1,4 @@
-package it.tregiorni
+package it.hourbyhour
 
 import android.app.Activity
 import android.appwidget.AppWidgetManager
@@ -59,7 +59,7 @@ class WidgetSettingsActivity : Activity() {
     /** The activity is exported for the launcher: ignore ids that are not widgets of this app. */
     private fun isOurWidget(id: Int): Boolean {
         val provider = AppWidgetManager.getInstance(this).getAppWidgetInfo(id)?.provider ?: return false
-        return provider == ComponentName(this, ThreeDaysWidget::class.java)
+        return provider == ComponentName(this, HourByHourWidget::class.java)
     }
 
     private fun showSettings() {

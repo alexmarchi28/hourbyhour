@@ -1,4 +1,4 @@
-package it.tregiorni
+package it.hourbyhour
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -18,7 +18,7 @@ object WidgetUpdater {
     const val DAY_COUNT = 3
 
     private const val DEFAULT_HEIGHT_DP = 180f
-    private const val TAG = "TreGiorni"
+    private const val TAG = "HourByHour"
 
     /** The events of the coming days, or null when calendar access has not been granted. */
     fun loadSnapshot(context: Context): Snapshot? {
@@ -42,7 +42,7 @@ object WidgetUpdater {
     /** Redraws every widget. Returns false when none is on the home screen. */
     fun updateAll(context: Context): Boolean {
         val manager = AppWidgetManager.getInstance(context)
-        val ids = manager.getAppWidgetIds(ComponentName(context, ThreeDaysWidget::class.java))
+        val ids = manager.getAppWidgetIds(ComponentName(context, HourByHourWidget::class.java))
         update(context, manager, ids)
         return ids.isNotEmpty()
     }
@@ -90,7 +90,7 @@ object WidgetUpdater {
     private fun refreshIntent(context: Context): PendingIntent = PendingIntent.getBroadcast(
         context,
         0,
-        Intent(context, ThreeDaysWidget::class.java).setAction(ThreeDaysWidget.ACTION_REFRESH),
+        Intent(context, HourByHourWidget::class.java).setAction(HourByHourWidget.ACTION_REFRESH),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 }

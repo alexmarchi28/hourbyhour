@@ -1,4 +1,4 @@
-package it.tregiorni
+package it.hourbyhour
 
 import android.Manifest
 import android.content.ContentUris

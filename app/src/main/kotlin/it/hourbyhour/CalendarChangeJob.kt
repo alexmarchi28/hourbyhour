@@ -1,4 +1,4 @@
-package it.tregiorni
+package it.hourbyhour
 
 import android.app.job.JobInfo
 import android.app.job.JobParameters

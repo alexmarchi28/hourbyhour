@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-App Android con un widget per la schermata Home che mostra **i prossimi tre giorni, ora per ora**, con gli eventi di Google Calendar nella loro fascia oraria. Il widget è di sola lettura: nessuna azione al tocco.
+**HourByHour** (prima "Tre Giorni"; la cartella del progetto ha ancora il vecchio nome) è un'app Android con un widget per la schermata Home che mostra **i prossimi tre giorni, ora per ora**, con gli eventi di Google Calendar nella loro fascia oraria. Il widget è di sola lettura: nessuna azione al tocco.
 
 Gli eventi si leggono da `CalendarContract`, il calendario del telefono che Google Calendar tiene sincronizzato. **Niente login Google e niente Calendar API**: l'app non ha il permesso INTERNET e i dati non escono dal telefono.
 
@@ -13,9 +13,9 @@ Gli eventi si leggono da `CalendarContract`, il calendario del telefono che Goog
 ./gradlew installDebug         # installa sul telefono collegato via adb
 
 # Forza l'aggiornamento del widget sul telefono
-adb shell am broadcast -n it.tregiorni/.ThreeDaysWidget -a it.tregiorni.action.REFRESH
+adb shell am broadcast -n it.hourbyhour/.HourByHourWidget -a it.hourbyhour.action.REFRESH
 # Esegue subito il job che reagisce alle modifiche del calendario
-adb shell cmd jobscheduler run -f it.tregiorni 1
+adb shell cmd jobscheduler run -f it.hourbyhour 1
 ```
 
 L'SDK è in `~/Android/Sdk` (`local.properties`, non versionato). `gradle.properties` forza IPv4: su questa macchina la JVM si blocca sugli indirizzi IPv6.
@@ -41,7 +41,7 @@ WidgetSettingsActivity.kt  schermata impostazioni di un widget, aperta dal launc
 CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse)
 WidgetViews.kt        traduce un WidgetLayout in RemoteViews, senza prendere decisioni
 WidgetUpdater.kt      carica gli eventi, aggiorna i widget, programma il prossimo aggiornamento
-ThreeDaysWidget.kt    AppWidgetProvider: aggiunta, ridimensionamento, cambi di ora/fuso/lingua
+HourByHourWidget.kt   AppWidgetProvider: aggiunta, ridimensionamento, cambi di ora/fuso/lingua
 CalendarChangeJob.kt  JobService con trigger sul content URI del calendario
 MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", anteprima del widget
 WidgetPreview.kt      anteprima del widget nelle schermate dell'app (stesse RemoteViews del launcher)
@@ -51,7 +51,7 @@ WidgetPreview.kt      anteprima del widget nelle schermate dell'app (stesse Remo
 
 Il numero di giorni non è fissato nella logica (`layoutWidget` e `splitIntoDays` accettano qualsiasi numero, almeno 1): oggi è solo la costante `WidgetUpdater.DAY_COUNT`.
 
-**Non rinominare `ThreeDaysWidget` né il package `it.tregiorni`**: il nome della classe identifica il widget per il launcher, e cambiarlo fa sparire i widget già aggiunti alla Home.
+**Non rinominare `HourByHourWidget` né il package `it.hourbyhour`** (né l'`applicationId`): il nome della classe identifica il widget per il launcher, e cambiarlo fa sparire i widget già aggiunti alla Home; l'`applicationId` non si può cambiare dopo la pubblicazione sul Play Store. Sono stati rinominati una sola volta, da `ThreeDaysWidget`/`it.tregiorni`, prima di qualsiasi pubblicazione.
 
 Regole sulla visualizzazione (in `Timeline.kt`):
 

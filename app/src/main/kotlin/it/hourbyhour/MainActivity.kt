@@ -1,4 +1,4 @@
-package it.tregiorni
+package it.hourbyhour
 
 import android.Manifest
 import android.app.Activity
@@ -38,7 +38,7 @@ class MainActivity : Activity() {
         val widgets = AppWidgetManager.getInstance(this)
         findViewById<Button>(R.id.add_widget).apply {
             visibility = if (widgets.isRequestPinAppWidgetSupported) View.VISIBLE else View.GONE
-            setOnClickListener { widgets.requestPinAppWidget(ComponentName(context, ThreeDaysWidget::class.java), null, null) }
+            setOnClickListener { widgets.requestPinAppWidget(ComponentName(context, HourByHourWidget::class.java), null, null) }
         }
     }
 

@@ -1,4 +1,4 @@
-package it.tregiorni
+package it.hourbyhour
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

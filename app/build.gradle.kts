@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "it.tregiorni"
+    namespace = "it.hourbyhour"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "it.tregiorni"
+        applicationId = "it.hourbyhour"
         minSdk = 31
         targetSdk = 36
         versionCode = 1

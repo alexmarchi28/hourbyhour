@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tre Giorni</string>
+    <string name="app_name">HourByHour</string>
     <string name="untitled_event">(Senza titolo)</string>
-    <string name="widget_description">I prossimi tre giorni, ora per ora</string>
+    <string name="widget_description">I tuoi eventi, ora per ora</string>
     <string name="widget_loading">Caricamento…</string>
-    <string name="widget_no_permission">Apri Tre Giorni e consenti l\'accesso al calendario</string>
+    <string name="widget_no_permission">Apri HourByHour e consenti l\'accesso al calendario</string>
 
-    <string name="status_needs_permission">Tre Giorni legge gli eventi dal calendario del telefono, che Google Calendar tiene sincronizzato. Nessun login: i dati non escono dal telefono.</string>
+    <string name="status_needs_permission">HourByHour legge gli eventi dal calendario del telefono, che Google Calendar tiene sincronizzato. Nessun login: i dati non escono dal telefono.</string>
     <string name="status_ready">Accesso al calendario consentito. Aggiungi il widget alla schermata Home e ridimensionalo come preferisci.</string>
     <string name="grant_access">Consenti accesso al calendario</string>
     <string name="open_settings">Apri le impostazioni dell\'app</string>
