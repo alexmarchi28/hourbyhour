@@ -165,4 +165,36 @@ class TimelineTest {
         assertEquals(at(11, 0), begin)
         assertEquals(at(16, 0), end)
     }
+
+    @Test
+    fun segmentsUseWallClockMinutesWhenClocksGoForward() {
+        // On 29 March 2026 clocks in Rome jump from 02:00 to 03:00: the day lasts 23 hours.
+        val day = LocalDate.of(2026, 3, 29)
+        fun march(hour: Int) = LocalDateTime.of(2026, 3, 29, hour, 0).atZone(zone).toInstant().toEpochMilli()
+
+        val days = splitIntoDays(listOf(timed("A", march(1), march(4)), timed("B", march(22), march(0) + 23 * 3_600_000L)), day, 1, zone)
+
+        assertEquals(listOf(60 to 240, 22 * 60 to 24 * 60), days[0].timed.map { it.startMinute to it.endMinute })
+    }
+
+    @Test
+    fun segmentsUseWallClockMinutesWhenClocksGoBack() {
+        // On 25 October 2026 clocks in Rome go back from 03:00 to 02:00: the day lasts 25 hours.
+        val dayStart = LocalDate.of(2026, 10, 25).atStartOfDay(zone).toInstant().toEpochMilli()
+        val dayEnd = LocalDate.of(2026, 10, 26).atStartOfDay(zone).toInstant().toEpochMilli()
+        val evening = LocalDateTime.of(2026, 10, 25, 22, 0).atZone(zone).toInstant().toEpochMilli()
+
+        val days = splitIntoDays(listOf(timed("All night", dayStart, dayStart + 5 * 3_600_000L), timed("Evening", evening, dayEnd)), LocalDate.of(2026, 10, 25), 1, zone)
+
+        // Five real hours from midnight end at 04:00 on the clock.
+        assertEquals(listOf(0 to 240, 22 * 60 to 24 * 60), days[0].timed.map { it.startMinute to it.endMinute })
+        assertEquals(dayEnd - dayStart, 25 * 3_600_000L)
+    }
+
+    @Test
+    fun segmentsAreSortedByStartThenLongestFirst() {
+        val days = split(timed("Short", at(12, 9), at(12, 10)), timed("Late", at(12, 11), at(12, 12)), timed("Long", at(12, 9), at(12, 11)))
+
+        assertEquals(listOf("Long", "Short", "Late"), days[0].timed.map { it.event.title })
+    }
 }
