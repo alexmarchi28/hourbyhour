@@ -16,5 +16,9 @@
     <string name="widget_settings_title">Impostazioni widget</string>
     <string name="transparency_label">Trasparenza dello sfondo</string>
     <string name="transparency_value">%1$d%%</string>
+    <string name="day_count_label">Numero di giorni</string>
+    <string name="day_count_value">%1$d</string>
+    <string name="start_on_monday">Inizia da lunedì</string>
+    <string name="start_on_monday_hint">Con 5 giorni o più: mostra la settimana da lunedì. Quando i giorni scelti sono passati, mostra la settimana successiva.</string>
     <string name="done">Fatto</string>
 </resources>

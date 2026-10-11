@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.SeekBar
+import android.widget.Switch
 import android.widget.TextView
 import kotlin.concurrent.thread
 
@@ -20,6 +21,8 @@ class WidgetSettingsActivity : Activity() {
     private lateinit var settings: WidgetSettings
     private lateinit var preview: WidgetPreview
     private lateinit var transparencyValue: TextView
+    private lateinit var dayCountValue: TextView
+    private lateinit var startOnMonday: Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,20 +39,24 @@ class WidgetSettingsActivity : Activity() {
         settings = store.load(widgetId)
         preview = WidgetPreview(this, findViewById(R.id.preview))
         transparencyValue = findViewById(R.id.transparency_value)
+        dayCountValue = findViewById(R.id.day_count_value)
 
         findViewById<SeekBar>(R.id.transparency).apply {
             max = 100 / WidgetSettings.TRANSPARENCY_STEP
             progress = settings.transparency / WidgetSettings.TRANSPARENCY_STEP
-            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(bar: SeekBar, progress: Int, fromUser: Boolean) {
-                    settings = settings.copy(transparency = progress * WidgetSettings.TRANSPARENCY_STEP)
-                    showSettings()
-                }
-
-                override fun onStartTrackingTouch(bar: SeekBar) = Unit
-
-                override fun onStopTrackingTouch(bar: SeekBar) = Unit
-            })
+            onProgress { settings = settings.copy(transparency = it * WidgetSettings.TRANSPARENCY_STEP) }
+        }
+        findViewById<SeekBar>(R.id.day_count).apply {
+            max = WidgetSettings.MAX_DAY_COUNT - 1
+            progress = settings.dayCount - 1
+            onProgress { settings = settings.copy(dayCount = it + 1) }
+        }
+        startOnMonday = findViewById<Switch>(R.id.start_on_monday).apply {
+            isChecked = settings.startOnMonday
+            setOnCheckedChangeListener { _, checked ->
+                settings = settings.copy(startOnMonday = checked)
+                showSettings()
+            }
         }
         findViewById<Button>(R.id.done).setOnClickListener { save() }
         showSettings()
@@ -64,7 +71,24 @@ class WidgetSettingsActivity : Activity() {
 
     private fun showSettings() {
         transparencyValue.text = getString(R.string.transparency_value, settings.transparency)
+        dayCountValue.text = getString(R.string.day_count_value, settings.dayCount)
+        // The choice is kept below five days, but has no effect there.
+        startOnMonday.isEnabled = settings.dayCount >= WidgetSettings.MIN_DAYS_FROM_MONDAY
         preview.settings = settings
+    }
+
+    /** Runs [update] with the new progress, then shows the new settings. */
+    private fun SeekBar.onProgress(update: (Int) -> Unit) {
+        setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar, progress: Int, fromUser: Boolean) {
+                update(progress)
+                showSettings()
+            }
+
+            override fun onStartTrackingTouch(bar: SeekBar) = Unit
+
+            override fun onStopTrackingTouch(bar: SeekBar) = Unit
+        })
     }
 
     private fun save() {
