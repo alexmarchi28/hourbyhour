@@ -322,6 +322,12 @@ class WidgetLayoutTest {
     }
 
     @Test
+    fun columnWidthLeavesOutTheHourLabels() {
+        // 330dp for 7 days is 47dp each, but the hour labels and padding take 34dp: 42dp, too few for "Lun 12".
+        assertEquals("L 12", layout(dayCount = 7, width = 330f).headers[0].label)
+    }
+
+    @Test
     fun headersShowOnlyTheDateInVeryNarrowColumns() {
         assertEquals("12", layout(dayCount = 7, width = 150f).headers[0].label)
     }
