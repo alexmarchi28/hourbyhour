@@ -15,6 +15,7 @@ import java.util.Locale
 
 /** Loads the events, builds the widget views and pushes them to the widgets on the home screen. */
 object WidgetUpdater {
+    private const val DEFAULT_WIDTH_DP = 250f
     private const val DEFAULT_HEIGHT_DP = 180f
     private const val TAG = "HourByHour"
 
@@ -28,11 +29,11 @@ object WidgetUpdater {
     }
 
     /** The widget content, or a message asking for calendar access when [agenda] is null. */
-    fun views(context: Context, agenda: Agenda?, heightDp: Float, settings: WidgetSettings): RemoteViews {
+    fun views(context: Context, agenda: Agenda?, size: WidgetSize, settings: WidgetSettings): RemoteViews {
         val views = WidgetViews(context, settings)
         if (agenda == null) return views.message()
         val fontScale = context.resources.configuration.fontScale
-        return views.build(layoutWidget(agenda.snapshot(settings), heightDp, fontScale, Locale.getDefault()))
+        return views.build(layoutWidget(agenda.snapshot(settings), size, fontScale, Locale.getDefault()))
     }
 
     /** Redraws every widget. Returns false when none is on the home screen. */
@@ -49,8 +50,8 @@ object WidgetUpdater {
             val agenda = loadAgenda(context)
             val store = WidgetSettingsStore(context)
             for (id in widgetIds) {
-                val heightDp = estimatedHeightDp(manager.getAppWidgetOptions(id))
-                manager.updateAppWidget(id, views(context, agenda, heightDp, store.load(id)))
+                val size = estimatedSize(manager.getAppWidgetOptions(id))
+                manager.updateAppWidget(id, views(context, agenda, size, store.load(id)))
             }
         } catch (e: RuntimeException) {
             // The widgets keep their last content and the next refresh tries again, instead of
@@ -67,12 +68,14 @@ object WidgetUpdater {
     }
 
     /**
-     * The widget height in portrait as reported by the launcher. Some launchers get it wrong (the
-     * Motorola one reports about 3/4 of it), so it is only used for estimates: the layout itself
-     * adapts to the real size.
+     * The widget size in portrait as reported by the launcher: as wide as the minimum width and as
+     * tall as the maximum height. Some launchers get it wrong (the Motorola one reports about 3/4 of
+     * the height), so it is only used for estimates: the layout itself adapts to the real size.
      */
-    private fun estimatedHeightDp(options: Bundle): Float =
-        options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 }?.toFloat() ?: DEFAULT_HEIGHT_DP
+    private fun estimatedSize(options: Bundle) = WidgetSize(
+        widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 }?.toFloat() ?: DEFAULT_WIDTH_DP,
+        heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 }?.toFloat() ?: DEFAULT_HEIGHT_DP,
+    )
 
     /**
      * Redraws at the next quarter hour, so the current-time line moves and the days roll over at

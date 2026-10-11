@@ -37,10 +37,11 @@ class WidgetLayoutTest {
         nowMinute: Int = 0,
         dayCount: Int = 3,
         height: Float = heightDp,
+        width: Float = WIDTH_DP,
     ): WidgetLayout {
         val now = LocalDateTime.of(2026, 10, 12, nowHour, nowMinute).atZone(zone)
         val snapshot = Snapshot(splitIntoDays(events.toList(), monday, dayCount, zone), now)
-        return layoutWidget(snapshot, height, fontScale = 1f, locale = Locale.ITALY)
+        return layoutWidget(snapshot, WidgetSize(width, height), fontScale = 1f, locale = Locale.ITALY)
     }
 
     @Test
@@ -165,7 +166,7 @@ class WidgetLayoutTest {
         val now = LocalDateTime.of(2026, 10, 12, 8, 0).atZone(zone)
         val snapshot = Snapshot(splitIntoDays(listOf(timed("A", at(12, 9), at(12, 9, 20))), monday, 3, zone), now)
 
-        val box = layoutWidget(snapshot, heightDp, fontScale = 1.5f, locale = Locale.ITALY).columns[0].events.single()
+        val box = layoutWidget(snapshot, WidgetSize(WIDTH_DP, heightDp), fontScale = 1.5f, locale = Locale.ITALY).columns[0].events.single()
 
         // 20dp fit a regular title at normal font size, but not at 1.5x.
         assertEquals(TitleSize.COMPACT, box.title)
@@ -310,5 +311,46 @@ class WidgetLayoutTest {
     @Test(expected = IllegalArgumentException::class)
     fun aWidgetNeedsAtLeastOneDay() {
         layout(dayCount = 0)
+    }
+
+    @Test
+    fun headersUseOneLetterWeekdaysInNarrowColumns() {
+        // 296dp for 7 days: columns of about 37dp, too narrow for "Lun 12".
+        val headers = layout(dayCount = 7, width = 296f).headers
+
+        assertEquals(listOf("L 12", "M 13", "M 14", "G 15", "V 16", "S 17", "D 18"), headers.map { it.label })
+    }
+
+    @Test
+    fun headersShowOnlyTheDateInVeryNarrowColumns() {
+        assertEquals("12", layout(dayCount = 7, width = 150f).headers[0].label)
+    }
+
+    @Test
+    fun longWordsStayOnOneLineInNarrowColumns() {
+        // Seven days on a widget 400dp wide: "Arrampicata" does not fit the width of the box.
+        val box = layout(timed("Arrampicata", at(12, 9), at(12, 11)), dayCount = 7).columns[0].events.single()
+
+        assertEquals(1, box.maxLines)
+    }
+
+    @Test
+    fun titlesWrapWhenEveryWordFits() {
+        val box = layout(timed("Arrampicata al Rock", at(12, 9), at(12, 11))).columns[0].events.single()
+
+        assertEquals(9, box.maxLines)
+    }
+
+    @Test
+    fun overlappingEventsShareTheWidthAlsoForWrapping() {
+        // Side by side, each box is half a column: too narrow for "Arrampicata" on more lines.
+        val events = layout(timed("Arrampicata", at(12, 9), at(12, 11)), timed("Riunione", at(12, 10), at(12, 12))).columns[0].events
+
+        assertEquals(1, events.single { it.event.title == "Arrampicata" }.maxLines)
+    }
+
+    private companion object {
+        /** About a widget 5 cells wide on a phone: columns of 122dp with three days. */
+        const val WIDTH_DP = 400f
     }
 }

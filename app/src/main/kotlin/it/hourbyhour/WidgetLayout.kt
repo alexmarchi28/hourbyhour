@@ -1,5 +1,6 @@
 package it.hourbyhour
 
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.ceil
@@ -58,21 +59,27 @@ enum class TitleSize {
     NONE,
 }
 
+/**
+ * The size of the widget as reported by the launcher, in dp. Only an estimate: some launchers get it
+ * wrong (the Motorola one reports about 3/4 of the height; its width is about right).
+ */
+data class WidgetSize(val widthDp: Float, val heightDp: Float)
+
 /** [nowLine] is the position of the current time as a fraction of the height, null when not shown. */
 data class DayColumn(val events: List<EventBox>, val nowLine: Float?)
 
 /**
- * Lays out [snapshot] for a widget about [heightDp] tall. The height is only an estimate (launchers
- * may report a wrong size): it decides how dense the hour labels are and how tall the shortest
- * events must be to stay readable. [fontScale] is the system font size setting.
+ * Lays out [snapshot] for a widget of about [size]. The size is only an estimate: it decides how
+ * dense the hour labels are, how the day headers and the titles fit narrow columns and when a box
+ * is too short for a title. [fontScale] is the system font size setting.
  */
-fun layoutWidget(snapshot: Snapshot, heightDp: Float, fontScale: Float, locale: Locale): WidgetLayout {
+fun layoutWidget(snapshot: Snapshot, size: WidgetSize, fontScale: Float, locale: Locale): WidgetLayout {
     val days = snapshot.days
     require(days.isNotEmpty()) { "The widget needs at least one day" }
     val today = snapshot.now.toLocalDate()
-    val dayFormat = DateTimeFormatter.ofPattern("EEE d", locale)
+    val columnWidthDp = ((size.widthDp - HORIZONTAL_CHROME_DP) / days.size).coerceAtLeast(1f)
     val headers = days.map { day ->
-        DayHeader(dayFormat.format(day.date).replaceFirstChar { it.titlecase(locale) }, day.date == today)
+        DayHeader(dayLabel(day.date, columnWidthDp - HEADER_MARGIN_DP, fontScale, locale), day.date == today)
     }
 
     val rowCount = minOf(days.maxOf { it.allDay.size }, MAX_BANNER_ROWS)
@@ -81,7 +88,7 @@ fun layoutWidget(snapshot: Snapshot, heightDp: Float, fontScale: Float, locale: 
     val range = hourRange(days)
     val rangeStart = range.start * 60
     val rangeEnd = range.end * 60
-    val gridHeightDp = (heightDp - CHROME_HEIGHT_DP - rowCount * BANNER_ROW_HEIGHT_DP).coerceAtLeast(1f)
+    val gridHeightDp = (size.heightDp - CHROME_HEIGHT_DP - rowCount * BANNER_ROW_HEIGHT_DP).coerceAtLeast(1f)
     val dpPerMinute = gridHeightDp / (rangeEnd - rangeStart)
 
     val labelStep = LABEL_STEPS.firstOrNull { it * 60 * dpPerMinute >= LABEL_SPACING_SP * fontScale } ?: 24
@@ -103,6 +110,7 @@ fun layoutWidget(snapshot: Snapshot, heightDp: Float, fontScale: Float, locale: 
             val segment = box.segment
             val (start, end) = visibleSpan(box, placed, minBar, rangeStart, rangeEnd)
             val boxHeightDp = (end - start) * dpPerMinute
+            val textWidthDp = columnWidthDp * (box.right - box.left) - EVENT_HORIZONTAL_SPACE_DP
             EventBox(
                 event = segment.event,
                 top = fraction(start),
@@ -114,7 +122,11 @@ fun layoutWidget(snapshot: Snapshot, heightDp: Float, fontScale: Float, locale: 
                     boxHeightDp >= MIN_TITLE_SP * fontScale -> TitleSize.COMPACT
                     else -> TitleSize.NONE
                 },
-                maxLines = ((boxHeightDp - EVENT_PADDING_DP) / lineHeightDp).toInt().coerceAtLeast(1),
+                maxLines = if (fitsWordByWord(segment.event.title, textWidthDp, fontScale)) {
+                    ((boxHeightDp - EVENT_PADDING_DP) / lineHeightDp).toInt().coerceAtLeast(1)
+                } else {
+                    1
+                },
                 past = segment.event.end <= nowMillis,
             )
         }
@@ -143,6 +155,28 @@ private fun visibleSpan(box: PlacedSegment, all: List<PlacedSegment>, minBar: In
     return start to end
 }
 
+/**
+ * "Lun 12" when it fits [widthDp], else "L 12" (one-letter weekday, unambiguous next to the date),
+ * else just "12".
+ */
+private fun dayLabel(date: LocalDate, widthDp: Float, fontScale: Float, locale: Locale): String =
+    listOf("EEE d", "EEEEE d", "d")
+        .map { DateTimeFormatter.ofPattern(it, locale).format(date).replaceFirstChar { c -> c.titlecase(locale) } }
+        .firstOrNull { estimatedWidthDp(it, HEADER_TEXT_SP * fontScale) <= widthDp }
+        ?: date.dayOfMonth.toString()
+
+/**
+ * Whether [title] can wrap on more lines without breaking a word: Android cuts words longer than
+ * the box anywhere ("Arrampica / ta"), so such titles stay on one line, cut with an ellipsis.
+ */
+private fun fitsWordByWord(title: String, widthDp: Float, fontScale: Float): Boolean {
+    val longestWord = title.split(Regex("\\s+")).maxOfOrNull { it.length } ?: 0
+    return longestWord * CHAR_WIDTH_EM * EVENT_TEXT_SP * fontScale <= widthDp
+}
+
+/** A rough width of [text]: real glyph widths are not known outside the launcher. */
+private fun estimatedWidthDp(text: String, textSizeDp: Float) = text.length * CHAR_WIDTH_EM * textSizeDp
+
 /** When a day has more all-day events than rows, its last row says how many are not shown. */
 private fun bannerCell(day: Day, row: Int, rows: Int): BannerCell {
     val overflow = day.allDay.size > rows
@@ -163,6 +197,16 @@ private const val BANNER_ROW_HEIGHT_DP = 18f
 private const val LABEL_SPACING_SP = 14f
 private const val LINE_HEIGHT_SP = 13f
 private const val EVENT_PADDING_DP = 3f
+
+// Widths in dp/sp matching the layouts, used with the estimated width.
+private const val HORIZONTAL_CHROME_DP = 34f // widget padding (2 x 6) and hour labels gutter (22)
+private const val HEADER_MARGIN_DP = 2f
+private const val HEADER_TEXT_SP = 12f
+private const val EVENT_TEXT_SP = 11f
+private const val EVENT_HORIZONTAL_SPACE_DP = 9f // separator, margins and padding of an event box
+
+/** Average width of a character in em: a little wide, so that estimates err on the safe side. */
+private const val CHAR_WIDTH_EM = 0.6f
 
 /** The thinnest an event is drawn, so that it stays visible. */
 private const val MIN_BAR_DP = 3f

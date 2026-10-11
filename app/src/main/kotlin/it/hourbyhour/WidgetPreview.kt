@@ -36,8 +36,10 @@ class WidgetPreview(private val activity: Activity, private val container: Frame
 
     private fun render() {
         if (!loaded) return
-        val heightDp = container.layoutParams.height / activity.resources.displayMetrics.density
+        val metrics = activity.resources.displayMetrics
+        val widthPx = container.width.takeIf { it > 0 } ?: metrics.widthPixels
+        val size = WidgetSize(widthPx / metrics.density, container.layoutParams.height / metrics.density)
         container.removeAllViews()
-        container.addView(WidgetUpdater.views(context, agenda, heightDp, settings).apply(activity, container))
+        container.addView(WidgetUpdater.views(context, agenda, size, settings).apply(activity, container))
     }
 }
