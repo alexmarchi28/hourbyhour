@@ -3,36 +3,22 @@ package it.tregiorni
 import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Configuration
-import android.graphics.Color
 import android.widget.RemoteViews
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-import kotlin.math.ceil
-
-/** What the widget shows: the days with their events, as seen at [now]. */
-data class Snapshot(val days: List<Day>, val now: ZonedDateTime)
 
 /**
- * Builds the widget out of layouts placed by weights (see event.xml), so it fills the real size of
- * the widget whatever size the launcher reports. Static colors come from resources and follow the
- * system theme. Event colors are set here for both themes, so the launcher can switch them as soon
- * as the theme changes.
+ * Turns a [WidgetLayout] into RemoteViews. The layouts are placed by weights (see event.xml), so
+ * they fill the real size of the widget whatever size the launcher reports. Static colors come from
+ * resources and follow the system theme. Event colors are set for both themes, so the launcher can
+ * switch them as soon as the theme changes.
  *
- * [heightDp] is only an estimate of the widget height, used to decide how dense the hour labels
- * can be and how tall the shortest events must be drawn to stay readable.
+ * All decisions about what to show and where belong in [layoutWidget], which is unit tested.
  */
-class WidgetViews(private val context: Context, private val heightDp: Float) {
+class WidgetViews(private val context: Context) {
     private val packageName = context.packageName
-    private val locale = Locale.getDefault()
-    private val dayFormat = DateTimeFormatter.ofPattern("EEE d", locale)
-    private val fontScale = context.resources.configuration.fontScale
     private val lightBackground = themedColor(R.color.widget_background, night = false)
     private val darkBackground = themedColor(R.color.widget_background, night = true)
 
-    fun build(snapshot: Snapshot): RemoteViews {
-        val days = snapshot.days
-        val today = snapshot.now.toLocalDate()
+    fun build(layout: WidgetLayout): RemoteViews {
         val root = RemoteViews(packageName, R.layout.widget)
         // The launcher may apply these views on top of the previous ones instead of inflating the
         // layout again: without this, every update would add another copy of the content.
@@ -40,112 +26,66 @@ class WidgetViews(private val context: Context, private val heightDp: Float) {
             root.removeAllViews(container)
         }
 
-        for (day in days) {
-            val header = RemoteViews(packageName, if (day.date == today) R.layout.day_header_today else R.layout.day_header)
-            header.setTextViewText(R.id.day_header, dayFormat.format(day.date).replaceFirstChar { it.titlecase(locale) })
-            root.addView(R.id.headers, header)
+        for (header in layout.headers) {
+            val views = RemoteViews(packageName, if (header.today) R.layout.day_header_today else R.layout.day_header)
+            views.setTextViewText(R.id.day_header, header.label)
+            root.addView(R.id.headers, views)
         }
 
-        val bannerRows = minOf(days.maxOf { it.allDay.size }, MAX_BANNER_ROWS)
-        for (row in 0 until bannerRows) {
+        for (row in layout.bannerRows) {
             val rowViews = RemoteViews(packageName, R.layout.banner_row)
-            for (day in days) rowViews.addView(R.id.banner_row, bannerCell(day, row, bannerRows))
+            for (cell in row) rowViews.addView(R.id.banner_row, bannerCell(cell))
             root.addView(R.id.banners, rowViews)
         }
 
-        val range = hourRange(days)
-        val gridHeightDp = (heightDp - CHROME_HEIGHT_DP - bannerRows * BANNER_ROW_HEIGHT_DP).coerceAtLeast(1f)
-        val dpPerMinute = gridHeightDp / (range.hours * 60)
-
-        val labelStep = LABEL_STEPS.firstOrNull { it * 60 * dpPerMinute >= LABEL_SPACING_SP * fontScale } ?: 24
-        for (hour in range.start until range.end) {
+        for (label in layout.hourLabels) {
             val row = RemoteViews(packageName, R.layout.hour_row)
-            row.setTextViewText(R.id.hour_label, if ((hour - range.start) % labelStep == 0) hour.toString() else "")
+            row.setTextViewText(R.id.hour_label, label)
             root.addView(R.id.hours, row)
         }
 
-        // Short events are drawn at least one text line tall.
-        val minEventHeightDp = LINE_HEIGHT_SP * fontScale + EVENT_PADDING_DP
-        val minDuration = ceil(minEventHeightDp / dpPerMinute).toInt()
-        val rangeStart = range.start * 60
-        val rangeEnd = range.end * 60
-        fun fraction(minute: Int) = (minute - rangeStart).toFloat() / (rangeEnd - rangeStart)
-
-        val nowMillis = snapshot.now.toInstant().toEpochMilli()
-        val nowMinute = snapshot.now.hour * 60 + snapshot.now.minute
-        for (day in days) {
-            val column = RemoteViews(packageName, R.layout.day_column)
-            for (placed in placeSegments(day.timed, minDuration)) {
-                val segment = placed.segment
-                val end = maxOf(segment.endMinute, segment.startMinute + minDuration).coerceAtMost(rangeEnd)
-                val start = minOf(segment.startMinute, end - minDuration).coerceAtLeast(rangeStart)
-                val past = segment.event.end <= nowMillis
-                column.addView(R.id.day_column, event(placed, fraction(start), fraction(end), (end - start) * dpPerMinute, past))
-            }
-            if (day.date == today && nowMinute in rangeStart..rangeEnd) {
-                column.addView(R.id.day_column, nowLine(fraction(nowMinute)))
-            }
-            root.addView(R.id.columns, column)
+        for (column in layout.columns) {
+            val columnViews = RemoteViews(packageName, R.layout.day_column)
+            for (box in column.events) columnViews.addView(R.id.day_column, event(box))
+            column.nowLine?.let { columnViews.addView(R.id.day_column, nowLine(it)) }
+            root.addView(R.id.columns, columnViews)
         }
         return root
     }
 
-    /** When a day has more all-day events than rows, its last row says how many are not shown. */
-    private fun bannerCell(day: Day, row: Int, rows: Int): RemoteViews {
-        val overflow = day.allDay.size > rows
-        val shown = if (overflow) rows - 1 else day.allDay.size
-        return when {
-            row < shown -> RemoteViews(packageName, R.layout.banner_chip).apply {
-                val event = day.allDay[row]
-                setTextViewText(R.id.banner_chip, event.title)
-                setEventColors(R.id.banner_chip, event.color, past = false)
-            }
-            overflow && row == rows - 1 -> RemoteViews(packageName, R.layout.banner_more).apply {
-                setTextViewText(R.id.banner_more, "+${day.allDay.size - shown}")
-            }
-            else -> RemoteViews(packageName, R.layout.banner_empty)
+    private fun bannerCell(cell: BannerCell): RemoteViews = when (cell) {
+        is BannerCell.Event -> RemoteViews(packageName, R.layout.banner_chip).apply {
+            setTextViewText(R.id.banner_chip, cell.event.title)
+            setEventColors(R.id.banner_chip, cell.event.color, past = false)
         }
-    }
-
-    /** Past events are faded towards the background so the upcoming ones stand out. */
-    private fun event(placed: PlacedSegment, top: Float, bottom: Float, eventHeightDp: Float, past: Boolean): RemoteViews {
-        val left = placed.column.toFloat() / placed.columns
-        val right = (placed.column + 1f) / placed.columns
-        val event = placed.segment.event
-        val lines = ((eventHeightDp - EVENT_PADDING_DP) / (LINE_HEIGHT_SP * fontScale)).toInt().coerceAtLeast(1)
-        return RemoteViews(packageName, R.layout.event).apply {
-            setWeightSums(R.id.event_v1, R.id.event_v2, top, bottom)
-            setWeightSums(R.id.event_h1, R.id.event_h2, left, right)
-            setTextViewText(R.id.event_text, event.title)
-            setEventColors(R.id.event_text, event.color, past)
-            setInt(R.id.event_text, "setMaxLines", lines)
+        is BannerCell.More -> RemoteViews(packageName, R.layout.banner_more).apply {
+            setTextViewText(R.id.banner_more, "+${cell.count}")
         }
+        BannerCell.Empty -> RemoteViews(packageName, R.layout.banner_empty)
     }
 
-    /** Colors [viewId] like Google Calendar colors [providerColor], with one variant per theme. */
-    private fun RemoteViews.setEventColors(viewId: Int, providerColor: Int, past: Boolean) {
-        val light = eventColor(providerColor, dark = false, past)
-        val dark = eventColor(providerColor, dark = true, past)
-        setColorStateList(viewId, "setBackgroundTintList", ColorStateList.valueOf(light), ColorStateList.valueOf(dark))
-        setColorInt(viewId, "setTextColor", contrastingText(light), contrastingText(dark))
-    }
-
-    private fun eventColor(providerColor: Int, dark: Boolean, past: Boolean): Int {
-        val color = GoogleColors.forDisplay(providerColor, dark)
-        return if (past) blend(color, if (dark) darkBackground else lightBackground, 0.5f) else color
-    }
-
-    /** A color resource as it is in the light or dark theme, whatever the current theme is. */
-    private fun themedColor(id: Int, night: Boolean): Int {
-        val configuration = Configuration(context.resources.configuration).apply {
-            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
-                if (night) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
-        }
-        return context.createConfigurationContext(configuration).getColor(id)
+    private fun event(box: EventBox) = RemoteViews(packageName, R.layout.event).apply {
+        setWeightSums(R.id.event_v1, R.id.event_v2, box.top, box.bottom)
+        setWeightSums(R.id.event_h1, R.id.event_h2, box.left, box.right)
+        setTextViewText(R.id.event_text, box.event.title)
+        setEventColors(R.id.event_text, box.event.color, box.past)
+        setInt(R.id.event_text, "setMaxLines", box.maxLines)
     }
 
     private fun nowLine(top: Float) = RemoteViews(packageName, R.layout.now_line).apply {
         setFloat(R.id.now_position, "setWeightSum", 1f / (1f - top.coerceAtMost(MAX_FRACTION)))
+    }
+
+    /** One color per theme: RemoteViews applies the one matching the launcher theme. */
+    private fun RemoteViews.setEventColors(viewId: Int, providerColor: Int, past: Boolean) {
+        val colors = eventColors(providerColor, past, lightBackground, darkBackground)
+        setColorStateList(
+            viewId,
+            "setBackgroundTintList",
+            ColorStateList.valueOf(colors.lightFill),
+            ColorStateList.valueOf(colors.darkFill),
+        )
+        setColorInt(viewId, "setTextColor", colors.lightText, colors.darkText)
     }
 
     /**
@@ -159,27 +99,17 @@ class WidgetViews(private val context: Context, private val heightDp: Float) {
         setFloat(inner, "setWeightSum", (1f - start) / (end - start))
     }
 
+    /** A color resource as it is in the light or dark theme, whatever the current theme is. */
+    private fun themedColor(id: Int, night: Boolean): Int {
+        val configuration = Configuration(context.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                if (night) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+        }
+        return context.createConfigurationContext(configuration).getColor(id)
+    }
+
     private companion object {
-        const val MAX_BANNER_ROWS = 2
-        val LABEL_STEPS = listOf(1, 2, 3, 4, 6, 12)
-
-        // Estimates in dp/sp matching the layouts, used only with the estimated height.
-        const val CHROME_HEIGHT_DP = 38f
-        const val BANNER_ROW_HEIGHT_DP = 18f
-        const val LABEL_SPACING_SP = 14f
-        const val LINE_HEIGHT_SP = 13f
-        const val EVENT_PADDING_DP = 3f
-
         const val MAX_FRACTION = 0.999f
         const val MIN_FRACTION = 0.001f
-
-        fun contrastingText(background: Int) = if (Color.luminance(background) > 0.5f) 0xFF202124.toInt() else Color.WHITE
-
-        /** Mixes the RGB channels of [from] towards [to]; the result is opaque. */
-        fun blend(from: Int, to: Int, ratio: Float): Int {
-            fun channel(shift: Int) =
-                (((from shr shift) and 0xFF) * (1 - ratio) + ((to shr shift) and 0xFF) * ratio).toInt()
-            return Color.rgb(channel(16), channel(8), channel(0))
-        }
     }
 }

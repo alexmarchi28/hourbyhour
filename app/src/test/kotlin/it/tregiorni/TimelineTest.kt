@@ -157,4 +157,12 @@ class TimelineTest {
 
         assertEquals(listOf(0, 1), placed.map { it.column })
     }
+
+    @Test
+    fun queryWindowAddsADayOnEachSide() {
+        val (begin, end) = queryWindow(today, 3, zone)
+
+        assertEquals(at(11, 0), begin)
+        assertEquals(at(16, 0), end)
+    }
 }

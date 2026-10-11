@@ -10,12 +10,12 @@ import android.os.Bundle
 import android.widget.RemoteViews
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.Locale
 
 /** Loads the events, builds the widget views and pushes them to the widgets on the home screen. */
 object WidgetUpdater {
     const val DAY_COUNT = 3
 
-    private const val REFRESH_INTERVAL_MILLIS = 15 * 60 * 1000L
     private const val DEFAULT_HEIGHT_DP = 180f
 
     /** The events of the coming days, or null when calendar access has not been granted. */
@@ -24,10 +24,7 @@ object WidgetUpdater {
         val zone = ZoneId.systemDefault()
         val now = ZonedDateTime.now(zone)
         val today = now.toLocalDate()
-        // One extra day on each side: all-day events are stored at UTC midnights and can start or
-        // end outside the local window. splitIntoDays keeps only what falls on the shown days.
-        val begin = today.minusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-        val end = today.plusDays(DAY_COUNT + 1L).atStartOfDay(zone).toInstant().toEpochMilli()
+        val (begin, end) = queryWindow(today, DAY_COUNT, zone)
         val events = CalendarSource.load(context, begin, end)
         return Snapshot(splitIntoDays(events, today, DAY_COUNT, zone), now)
     }
@@ -37,7 +34,8 @@ object WidgetUpdater {
         if (snapshot == null) {
             RemoteViews(context.packageName, R.layout.widget_message)
         } else {
-            WidgetViews(context, heightDp).build(snapshot)
+            val fontScale = context.resources.configuration.fontScale
+            WidgetViews(context).build(layoutWidget(snapshot, heightDp, fontScale, Locale.getDefault()))
         }
 
     /** Redraws every widget. Returns false when none is on the home screen. */
@@ -75,8 +73,7 @@ object WidgetUpdater {
      * midnight. RTC (not RTC_WAKEUP) never wakes the phone: a sleeping phone redraws when it wakes up.
      */
     private fun scheduleRefresh(context: Context) {
-        val now = System.currentTimeMillis()
-        val next = (now / REFRESH_INTERVAL_MILLIS + 1) * REFRESH_INTERVAL_MILLIS + 5_000
+        val next = nextRefreshTime(System.currentTimeMillis())
         context.getSystemService(AlarmManager::class.java).set(AlarmManager.RTC, next, refreshIntent(context))
     }
 
@@ -87,3 +84,12 @@ object WidgetUpdater {
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 }
+
+private const val REFRESH_INTERVAL_MILLIS = 15 * 60 * 1000L
+
+/**
+ * The next quarter hour after [nowMillis], plus a few seconds so the clock is surely past it.
+ * Quarter hours of epoch time are also local quarter hours (and midnight) in every time zone whose
+ * offset is a multiple of 15 minutes, which covers all current ones.
+ */
+fun nextRefreshTime(nowMillis: Long): Long = (nowMillis / REFRESH_INTERVAL_MILLIS + 1) * REFRESH_INTERVAL_MILLIS + 5_000

@@ -4,6 +4,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
 /** An event instance as read from the calendar provider. Times are epoch millis. */
 data class CalendarEvent(
@@ -19,6 +20,9 @@ data class Segment(val event: CalendarEvent, val startMinute: Int, val endMinute
 
 /** A segment drawn in [column] of [columns] side-by-side columns, so overlapping events stay visible. */
 data class PlacedSegment(val segment: Segment, val column: Int, val columns: Int)
+
+/** What the widget shows: the days with their events, as seen at [now]. */
+data class Snapshot(val days: List<Day>, val now: ZonedDateTime)
 
 /** One column of the widget. [allDay] holds the events shown in the banner row above the grid. */
 data class Day(val date: LocalDate, val allDay: List<CalendarEvent>, val timed: List<Segment>)
@@ -61,6 +65,16 @@ fun splitIntoDays(events: List<CalendarEvent>, firstDay: LocalDate, dayCount: In
         }
         Day(date, allDay, timed.sortedWith(compareBy<Segment> { it.startMinute }.thenByDescending { it.endMinute }))
     }
+
+/**
+ * The time span to query for [dayCount] days from [firstDay], as epoch millis [first, second). It has
+ * one extra day on each side: all-day events are stored at UTC midnights and can start or end outside
+ * the local days. [splitIntoDays] keeps only what falls on the shown days.
+ */
+fun queryWindow(firstDay: LocalDate, dayCount: Int, zone: ZoneId): Pair<Long, Long> = Pair(
+    firstDay.minusDays(1).atStartOfDay(zone).toInstant().toEpochMilli(),
+    firstDay.plusDays(dayCount + 1L).atStartOfDay(zone).toInstant().toEpochMilli(),
+)
 
 private fun isBanner(event: CalendarEvent) = event.allDay || event.end - event.begin >= MILLIS_PER_DAY
 
