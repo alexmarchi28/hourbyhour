@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.RemoteViews
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -17,6 +18,7 @@ object WidgetUpdater {
     const val DAY_COUNT = 3
 
     private const val DEFAULT_HEIGHT_DP = 180f
+    private const val TAG = "TreGiorni"
 
     /** The events of the coming days, or null when calendar access has not been granted. */
     fun loadSnapshot(context: Context): Snapshot? {
@@ -48,12 +50,19 @@ object WidgetUpdater {
 
     fun update(context: Context, manager: AppWidgetManager, widgetIds: IntArray) {
         if (widgetIds.isEmpty()) return
-        val snapshot = loadSnapshot(context)
-        for (id in widgetIds) {
-            manager.updateAppWidget(id, views(context, snapshot, estimatedHeightDp(manager.getAppWidgetOptions(id))))
+        try {
+            val snapshot = loadSnapshot(context)
+            for (id in widgetIds) {
+                manager.updateAppWidget(id, views(context, snapshot, estimatedHeightDp(manager.getAppWidgetOptions(id))))
+            }
+        } catch (e: RuntimeException) {
+            // The widgets keep their last content and the next refresh tries again, instead of
+            // crashing the app in the background.
+            Log.e(TAG, "Widget update failed", e)
+        } finally {
+            scheduleRefresh(context)
+            CalendarChangeJob.ensureScheduled(context)
         }
-        scheduleRefresh(context)
-        CalendarChangeJob.ensureScheduled(context)
     }
 
     fun cancelRefresh(context: Context) {
