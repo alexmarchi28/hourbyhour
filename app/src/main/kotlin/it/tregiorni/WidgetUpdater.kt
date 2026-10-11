@@ -6,20 +6,17 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.widget.RemoteViews
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import kotlin.math.roundToInt
 
-/** Loads the events, draws them and pushes the bitmap to the widgets on the home screen. */
+/** Loads the events, builds the widget views and pushes them to the widgets on the home screen. */
 object WidgetUpdater {
     const val DAY_COUNT = 3
 
     private const val REFRESH_INTERVAL_MILLIS = 15 * 60 * 1000L
-    private const val DEFAULT_WIDTH_DP = 250
-    private const val DEFAULT_HEIGHT_DP = 180
+    private const val DEFAULT_HEIGHT_DP = 180f
 
     /** The events of the coming days, or null when calendar access has not been granted. */
     fun loadSnapshot(context: Context): Snapshot? {
@@ -35,14 +32,13 @@ object WidgetUpdater {
         return Snapshot(splitIntoDays(events, today, DAY_COUNT, zone), now)
     }
 
-    fun render(context: Context, width: Int, height: Int, snapshot: Snapshot?): Bitmap {
-        val renderer = WidgetRenderer(context)
-        return if (snapshot == null) {
-            renderer.renderMessage(width, height, context.getString(R.string.widget_no_permission))
+    /** The widget content, or a message asking for calendar access when [snapshot] is null. */
+    fun views(context: Context, snapshot: Snapshot?, heightDp: Float): RemoteViews =
+        if (snapshot == null) {
+            RemoteViews(context.packageName, R.layout.widget_message)
         } else {
-            renderer.render(width, height, snapshot)
+            WidgetViews(context, heightDp).build(snapshot)
         }
-    }
 
     /** Redraws every widget. Returns false when none is on the home screen. */
     fun updateAll(context: Context): Boolean {
@@ -56,10 +52,7 @@ object WidgetUpdater {
         if (widgetIds.isEmpty()) return
         val snapshot = loadSnapshot(context)
         for (id in widgetIds) {
-            val (width, height) = sizeInPixels(context, manager.getAppWidgetOptions(id))
-            val views = RemoteViews(context.packageName, R.layout.widget)
-            views.setImageViewBitmap(R.id.widget_image, render(context, width, height, snapshot))
-            manager.updateAppWidget(id, views)
+            manager.updateAppWidget(id, views(context, snapshot, estimatedHeightDp(manager.getAppWidgetOptions(id))))
         }
         scheduleRefresh(context)
         CalendarChangeJob.ensureScheduled(context)
@@ -70,15 +63,12 @@ object WidgetUpdater {
     }
 
     /**
-     * The launcher reports a range of sizes: in portrait the widget is as wide as the minimum width
-     * and as tall as the maximum height.
+     * The widget height in portrait as reported by the launcher. Some launchers get it wrong (the
+     * Motorola one reports about 3/4 of it), so it is only used for estimates: the layout itself
+     * adapts to the real size.
      */
-    private fun sizeInPixels(context: Context, options: Bundle): Pair<Int, Int> {
-        val density = context.resources.displayMetrics.density
-        val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 } ?: DEFAULT_WIDTH_DP
-        val heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 } ?: DEFAULT_HEIGHT_DP
-        return (widthDp * density).roundToInt() to (heightDp * density).roundToInt()
-    }
+    private fun estimatedHeightDp(options: Bundle): Float =
+        options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 }?.toFloat() ?: DEFAULT_HEIGHT_DP
 
     /**
      * Redraws at the next quarter hour, so the current-time line moves and the days roll over at

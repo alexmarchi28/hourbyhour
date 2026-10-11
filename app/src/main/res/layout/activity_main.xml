@@ -37,12 +37,11 @@
             android:text="@string/preview"
             android:textAppearance="?android:attr/textAppearanceSmall" />
 
-        <ImageView
+        <!-- Filled with the same RemoteViews the widget uses. -->
+        <FrameLayout
             android:id="@+id/preview"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:adjustViewBounds="true"
-            android:contentDescription="@string/widget_description" />
+            android:layout_height="420dp"
+            android:layout_marginTop="8dp" />
     </LinearLayout>
 </ScrollView>

@@ -11,7 +11,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import android.widget.Button
-import android.widget.ImageView
+import android.widget.FrameLayout
 import android.widget.TextView
 import kotlin.concurrent.thread
 
@@ -19,7 +19,7 @@ import kotlin.concurrent.thread
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var grantButton: Button
-    private lateinit var preview: ImageView
+    private lateinit var preview: FrameLayout
     private var deniedForever = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,24 +62,25 @@ class MainActivity : Activity() {
         status.setText(if (granted) R.string.status_ready else R.string.status_needs_permission)
         grantButton.visibility = if (granted) View.GONE else View.VISIBLE
         grantButton.setText(if (deniedForever) R.string.open_settings else R.string.grant_access)
-        // The preview needs the view width, known only after layout.
-        preview.post { renderPreview() }
+        renderPreview()
     }
 
     private fun renderPreview() {
-        val width = preview.width
-        if (width == 0) return
         val context = applicationContext
+        val heightDp = preview.layoutParams.height / resources.displayMetrics.density
         thread {
-            val bitmap = WidgetUpdater.render(context, width, (width * PREVIEW_ASPECT_RATIO).toInt(), WidgetUpdater.loadSnapshot(context))
+            val snapshot = WidgetUpdater.loadSnapshot(context)
             // Calendar access may have changed since the widgets were last drawn.
             WidgetUpdater.updateAll(context)
-            runOnUiThread { if (!isDestroyed) preview.setImageBitmap(bitmap) }
+            runOnUiThread {
+                if (isDestroyed) return@runOnUiThread
+                preview.removeAllViews()
+                preview.addView(WidgetUpdater.views(context, snapshot, heightDp).apply(this, preview))
+            }
         }
     }
 
     private companion object {
         const val REQUEST_CALENDAR = 1
-        const val PREVIEW_ASPECT_RATIO = 0.8f
     }
 }
