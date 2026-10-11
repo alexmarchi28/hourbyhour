@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The current time: now_position covers the column from the current time down, the line sits on its top edge. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/now_position"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clipChildren="false"
     android:gravity="bottom"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:ignore="UselessParent">
 
     <FrameLayout
         android:layout_width="match_parent"
