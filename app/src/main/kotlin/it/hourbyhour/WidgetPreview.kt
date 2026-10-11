@@ -10,7 +10,7 @@ import kotlin.concurrent.thread
  */
 class WidgetPreview(private val activity: Activity, private val container: FrameLayout) {
     private val context = activity.applicationContext
-    private var snapshot: Snapshot? = null
+    private var agenda: Agenda? = null
     private var loaded = false
 
     /** Changing the settings redraws the preview with them. */
@@ -23,11 +23,11 @@ class WidgetPreview(private val activity: Activity, private val container: Frame
     /** Reads the calendar again and redraws. [alsoInBackground] runs on the same background thread. */
     fun reload(alsoInBackground: () -> Unit = {}) {
         thread {
-            val read = WidgetUpdater.loadSnapshot(context)
+            val read = WidgetUpdater.loadAgenda(context)
             alsoInBackground()
             activity.runOnUiThread {
                 if (activity.isDestroyed) return@runOnUiThread
-                snapshot = read
+                agenda = read
                 loaded = true
                 render()
             }
@@ -38,6 +38,6 @@ class WidgetPreview(private val activity: Activity, private val container: Frame
         if (!loaded) return
         val heightDp = container.layoutParams.height / activity.resources.displayMetrics.density
         container.removeAllViews()
-        container.addView(WidgetUpdater.views(context, snapshot, heightDp, settings).apply(activity, container))
+        container.addView(WidgetUpdater.views(context, agenda, heightDp, settings).apply(activity, container))
     }
 }

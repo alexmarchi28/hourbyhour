@@ -1,10 +1,12 @@
 package it.hourbyhour
 
 import java.time.Instant
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.time.temporal.TemporalAdjusters
 
 /** An event instance as read from the calendar provider. Times are epoch millis. */
 data class CalendarEvent(
@@ -23,6 +25,27 @@ data class PlacedSegment(val segment: Segment, val column: Int, val columns: Int
 
 /** What the widget shows: the days with their events, as seen at [now]. */
 data class Snapshot(val days: List<Day>, val now: ZonedDateTime)
+
+/**
+ * The events read from the calendar at [now], for the current and the next week: every widget (and
+ * the preview, while settings change) takes its days from here without reading the calendar again.
+ */
+data class Agenda(val events: List<CalendarEvent>, val now: ZonedDateTime) {
+    fun snapshot(settings: WidgetSettings): Snapshot {
+        val firstDay = settings.firstDay(now.toLocalDate())
+        return Snapshot(splitIntoDays(events, firstDay, settings.dayCount, now.zone), now)
+    }
+
+    companion object {
+        /**
+         * Two weeks from Monday of the current week cover every setting: up to seven days from
+         * today, and a week from Monday, this one or the next.
+         */
+        const val DAYS = 14
+
+        fun firstDay(today: LocalDate): LocalDate = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    }
+}
 
 /** One column of the widget. [allDay] holds the events shown in the banner row above the grid. */
 data class Day(val date: LocalDate, val allDay: List<CalendarEvent>, val timed: List<Segment>)

@@ -15,28 +15,24 @@ import java.util.Locale
 
 /** Loads the events, builds the widget views and pushes them to the widgets on the home screen. */
 object WidgetUpdater {
-    const val DAY_COUNT = 3
-
     private const val DEFAULT_HEIGHT_DP = 180f
     private const val TAG = "HourByHour"
 
-    /** The events of the coming days, or null when calendar access has not been granted. */
-    fun loadSnapshot(context: Context): Snapshot? {
+    /** The events of the current and next week, or null when calendar access has not been granted. */
+    fun loadAgenda(context: Context): Agenda? {
         if (!CalendarSource.hasPermission(context)) return null
         val zone = ZoneId.systemDefault()
         val now = ZonedDateTime.now(zone)
-        val today = now.toLocalDate()
-        val (begin, end) = queryWindow(today, DAY_COUNT, zone)
-        val events = CalendarSource.load(context, begin, end)
-        return Snapshot(splitIntoDays(events, today, DAY_COUNT, zone), now)
+        val (begin, end) = queryWindow(Agenda.firstDay(now.toLocalDate()), Agenda.DAYS, zone)
+        return Agenda(CalendarSource.load(context, begin, end), now)
     }
 
-    /** The widget content, or a message asking for calendar access when [snapshot] is null. */
-    fun views(context: Context, snapshot: Snapshot?, heightDp: Float, settings: WidgetSettings): RemoteViews {
+    /** The widget content, or a message asking for calendar access when [agenda] is null. */
+    fun views(context: Context, agenda: Agenda?, heightDp: Float, settings: WidgetSettings): RemoteViews {
         val views = WidgetViews(context, settings)
-        if (snapshot == null) return views.message()
+        if (agenda == null) return views.message()
         val fontScale = context.resources.configuration.fontScale
-        return views.build(layoutWidget(snapshot, heightDp, fontScale, Locale.getDefault()))
+        return views.build(layoutWidget(agenda.snapshot(settings), heightDp, fontScale, Locale.getDefault()))
     }
 
     /** Redraws every widget. Returns false when none is on the home screen. */
@@ -50,11 +46,11 @@ object WidgetUpdater {
     fun update(context: Context, manager: AppWidgetManager, widgetIds: IntArray) {
         if (widgetIds.isEmpty()) return
         try {
-            val snapshot = loadSnapshot(context)
+            val agenda = loadAgenda(context)
             val store = WidgetSettingsStore(context)
             for (id in widgetIds) {
                 val heightDp = estimatedHeightDp(manager.getAppWidgetOptions(id))
-                manager.updateAppWidget(id, views(context, snapshot, heightDp, store.load(id)))
+                manager.updateAppWidget(id, views(context, agenda, heightDp, store.load(id)))
             }
         } catch (e: RuntimeException) {
             // The widgets keep their last content and the next refresh tries again, instead of

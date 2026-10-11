@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TimelineTest {
@@ -208,5 +209,33 @@ class TimelineTest {
         val days = split(timed("Short", at(12, 9), at(12, 10)), timed("Late", at(12, 11), at(12, 12)), timed("Long", at(12, 9), at(12, 11)))
 
         assertEquals(listOf("Long", "Short", "Late"), days[0].timed.map { it.event.title })
+    }
+
+    @Test
+    fun agendaCoversEverySettingOnEveryDayOfTheWeek() {
+        for (offset in 0L..6L) {
+            val day = today.plusDays(offset)
+            val agendaStart = Agenda.firstDay(day)
+            val agendaEnd = agendaStart.plusDays(Agenda.DAYS.toLong())
+            for (days in 1..WidgetSettings.MAX_DAY_COUNT) {
+                for (fromMonday in listOf(false, true)) {
+                    val settings = WidgetSettings(dayCount = days, startOnMonday = fromMonday)
+                    val first = settings.firstDay(day)
+                    val last = first.plusDays(days - 1L)
+                    assertTrue("$day $settings", !first.isBefore(agendaStart) && last.isBefore(agendaEnd))
+                }
+            }
+        }
+    }
+
+    @Test
+    fun agendaSnapshotShowsTheDaysOfTheSettings() {
+        val now = LocalDateTime.of(2026, 10, 17, 10, 0).atZone(zone)
+        val agenda = Agenda(listOf(timed("Monday", at(19, 9), at(19, 10))), now)
+
+        val snapshot = agenda.snapshot(WidgetSettings(dayCount = 5, startOnMonday = true))
+
+        assertEquals((19..23).map { LocalDate.of(2026, 10, it) }, snapshot.days.map { it.date })
+        assertEquals(1, snapshot.days[0].timed.size)
     }
 }
