@@ -2,6 +2,7 @@ package it.tregiorni
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.graphics.Color
 import android.widget.RemoteViews
 import java.time.ZonedDateTime
@@ -15,7 +16,8 @@ data class Snapshot(val days: List<Day>, val now: ZonedDateTime)
 /**
  * Builds the widget out of layouts placed by weights (see event.xml), so it fills the real size of
  * the widget whatever size the launcher reports. Static colors come from resources and follow the
- * system theme; event colors are set here.
+ * system theme. Event colors are set here for both themes, so the launcher can switch them as soon
+ * as the theme changes.
  *
  * [heightDp] is only an estimate of the widget height, used to decide how dense the hour labels
  * can be and how tall the shortest events must be drawn to stay readable.
@@ -25,7 +27,8 @@ class WidgetViews(private val context: Context, private val heightDp: Float) {
     private val locale = Locale.getDefault()
     private val dayFormat = DateTimeFormatter.ofPattern("EEE d", locale)
     private val fontScale = context.resources.configuration.fontScale
-    private val background = context.getColor(R.color.widget_background)
+    private val lightBackground = themedColor(R.color.widget_background, night = false)
+    private val darkBackground = themedColor(R.color.widget_background, night = true)
 
     fun build(snapshot: Snapshot): RemoteViews {
         val days = snapshot.days
@@ -95,8 +98,7 @@ class WidgetViews(private val context: Context, private val heightDp: Float) {
             row < shown -> RemoteViews(packageName, R.layout.banner_chip).apply {
                 val event = day.allDay[row]
                 setTextViewText(R.id.banner_chip, event.title)
-                setTextColor(R.id.banner_chip, contrastingText(event.color))
-                setColorStateList(R.id.banner_chip, "setBackgroundTintList", ColorStateList.valueOf(event.color))
+                setEventColors(R.id.banner_chip, event.color, past = false)
             }
             overflow && row == rows - 1 -> RemoteViews(packageName, R.layout.banner_more).apply {
                 setTextViewText(R.id.banner_more, "+${day.allDay.size - shown}")
@@ -110,16 +112,36 @@ class WidgetViews(private val context: Context, private val heightDp: Float) {
         val left = placed.column.toFloat() / placed.columns
         val right = (placed.column + 1f) / placed.columns
         val event = placed.segment.event
-        val color = if (past) blend(event.color, background, 0.5f) else event.color
         val lines = ((eventHeightDp - EVENT_PADDING_DP) / (LINE_HEIGHT_SP * fontScale)).toInt().coerceAtLeast(1)
         return RemoteViews(packageName, R.layout.event).apply {
             setWeightSums(R.id.event_v1, R.id.event_v2, top, bottom)
             setWeightSums(R.id.event_h1, R.id.event_h2, left, right)
             setTextViewText(R.id.event_text, event.title)
-            setTextColor(R.id.event_text, contrastingText(color))
-            setColorStateList(R.id.event_text, "setBackgroundTintList", ColorStateList.valueOf(color))
+            setEventColors(R.id.event_text, event.color, past)
             setInt(R.id.event_text, "setMaxLines", lines)
         }
+    }
+
+    /** Colors [viewId] like Google Calendar colors [providerColor], with one variant per theme. */
+    private fun RemoteViews.setEventColors(viewId: Int, providerColor: Int, past: Boolean) {
+        val light = eventColor(providerColor, dark = false, past)
+        val dark = eventColor(providerColor, dark = true, past)
+        setColorStateList(viewId, "setBackgroundTintList", ColorStateList.valueOf(light), ColorStateList.valueOf(dark))
+        setColorInt(viewId, "setTextColor", contrastingText(light), contrastingText(dark))
+    }
+
+    private fun eventColor(providerColor: Int, dark: Boolean, past: Boolean): Int {
+        val color = GoogleColors.forDisplay(providerColor, dark)
+        return if (past) blend(color, if (dark) darkBackground else lightBackground, 0.5f) else color
+    }
+
+    /** A color resource as it is in the light or dark theme, whatever the current theme is. */
+    private fun themedColor(id: Int, night: Boolean): Int {
+        val configuration = Configuration(context.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                if (night) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+        }
+        return context.createConfigurationContext(configuration).getColor(id)
     }
 
     private fun nowLine(top: Float) = RemoteViews(packageName, R.layout.now_line).apply {
