@@ -225,6 +225,23 @@ class WidgetLayoutTest {
     }
 
     @Test
+    fun eventsWithoutDurationAtTheSameTimeSitSideBySide() {
+        val events = layout(timed("A", at(12, 9), at(12, 9)), timed("B", at(12, 9), at(12, 9))).columns[0].events
+
+        assertEquals(listOf(0f to 0.5f, 0.5f to 1f), events.map { it.left to it.right }.sortedBy { it.first })
+    }
+
+    @Test
+    fun barBesideALongerEventGrowsInItsOwnColumn() {
+        // B overlaps A, so it gets the right half: A is not in its way, and B grows to the thinnest bar (18 minutes).
+        val events = layout(timed("A", at(12, 9), at(12, 10)), timed("B", at(12, 9), at(12, 9, 5)), height = 98f).columns[0].events
+        val b = events.single { it.event.title == "B" }
+
+        assertEquals(0.5f to 1f, b.left to b.right)
+        assertEquals(138f / 360, b.bottom, delta)
+    }
+
+    @Test
     fun barAtTheEndOfTheRangeGrowsUpwards() {
         // The range is 18-24: a one-minute event at 23:59 cannot grow past midnight, so it starts earlier.
         val box = layout(timed("A", at(12, 23, 59), at(13, 0))).columns[0].events.single()
