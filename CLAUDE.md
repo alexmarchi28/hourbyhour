@@ -33,15 +33,21 @@ Prima di aggiungere una dipendenza, chiedi.
 ```
 Timeline.kt           logica pura, testata su JVM: eventi → giorni, fascia oraria, colonne per le sovrapposizioni
 GoogleColors.kt       logica pura, testata su JVM: colori del provider → colori mostrati da Google Calendar
+WidgetLayout.kt       logica pura, testata su JVM: cosa mostra il widget e dove (frazioni delle colonne)
+EventColors.kt        logica pura, testata su JVM: colori di riempimento e testo degli eventi, per tema
 CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse)
-WidgetViews.kt        costruisce le RemoteViews del widget a partire da uno Snapshot
+WidgetViews.kt        traduce un WidgetLayout in RemoteViews, senza prendere decisioni
 WidgetUpdater.kt      carica gli eventi, aggiorna i widget, programma il prossimo aggiornamento
 ThreeDaysWidget.kt    AppWidgetProvider: aggiunta, ridimensionamento, cambi di ora/fuso/lingua
 CalendarChangeJob.kt  JobService con trigger sul content URI del calendario
 MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", anteprima del widget
 ```
 
-`Timeline.kt` e `GoogleColors.kt` non dipendono da Android: la logica nuova va lì, con i suoi test.
+`Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt` ed `EventColors.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `splitIntoDays` → `Snapshot` → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
+
+Il numero di giorni non è fissato nella logica (`layoutWidget` e `splitIntoDays` accettano qualsiasi numero, almeno 1): oggi è solo la costante `WidgetUpdater.DAY_COUNT`.
+
+**Non rinominare `ThreeDaysWidget` né il package `it.tregiorni`**: il nome della classe identifica il widget per il launcher, e cambiarlo fa sparire i widget già aggiunti alla Home.
 
 Regole sulla visualizzazione (in `Timeline.kt`):
 
@@ -77,9 +83,15 @@ Aggiornamenti: alla aggiunta e al ridimensionamento del widget, quando cambia il
 
 ## Verifica sul telefono
 
-I test JVM coprono solo `Timeline.kt` e `GoogleColors.kt`. Ogni modifica al widget va provata sul telefono: installa, forza l'aggiornamento e guarda il risultato (`adb exec-out screencap -p > shot.png`). Prova anche dimensioni diverse (ridimensionando il widget) e il tema chiaro (`adb shell cmd uimode night no`, poi ripristina con `yes`). L'anteprima nell'app usa le stesse `RemoteViews`, ma non sostituisce la prova sul launcher.
+I test JVM coprono la logica pura (`Timeline`, `GoogleColors`, `WidgetLayout`, `EventColors`, `nextRefreshTime`), non le RemoteViews. Ogni modifica al widget va provata sul telefono: installa, forza l'aggiornamento e guarda il risultato (`adb exec-out screencap -p > shot.png`). Prova anche dimensioni diverse (ridimensionando il widget) e il tema chiaro (`adb shell cmd uimode night no`, poi ripristina con `yes`). L'anteprima nell'app usa le stesse `RemoteViews`, ma non sostituisce la prova sul launcher.
 
 Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (stesso tema) e leggi il colore di un pixel al centro di un evento, lontano dal testo.
+
+## Test
+
+- Ogni modifica alla logica arriva con i suoi test. Per i casi limite (mezzanotte, ora legale, eventi che si toccano, evento che finisce adesso) scrivi un test esplicito.
+- Per capire se i test proteggono davvero una parte di codice, rompila apposta (cambia un `<=` in `<`, un coefficiente, una condizione) e controlla che almeno un test fallisca. Poi ripristina con `git checkout`.
+- I colori attesi nei test di `GoogleColors` vengono da screenshot reali o da un'implementazione indipendente: non rigenerarli dal codice Kotlin, altrimenti il test non verifica più niente.
 
 ## Convenzioni
 
