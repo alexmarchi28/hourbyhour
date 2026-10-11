@@ -124,21 +124,112 @@ class WidgetLayoutTest {
     }
 
     @Test
-    fun shortEventIsDrawnAtLeastOneLineTall() {
-        // One line of text plus padding is 16dp, that is 16 minutes at one dp per minute.
+    fun shortEventKeepsItsRealLength() {
         val box = layout(timed("A", at(12, 9), at(12, 9, 5))).columns[0].events.single()
 
         assertEquals(120f / 360, box.top, delta)
-        assertEquals(136f / 360, box.bottom, delta)
-        assertEquals(1, box.maxLines)
+        assertEquals(125f / 360, box.bottom, delta)
     }
 
     @Test
-    fun shortEventAtTheEndOfTheRangeGrowsUpwards() {
-        // The range is 18-24: the event cannot grow past midnight, so it starts earlier.
-        val box = layout(timed("A", at(12, 23, 55), at(13, 0))).columns[0].events.single()
+    fun adjacentShortEventsDoNotShareTheWidth() {
+        // A 15-minute event followed right away by others: no overlap, so all of them are full width.
+        val events = layout(
+            timed("Meditazione", at(12, 7), at(12, 7, 15)),
+            timed("Lettura", at(12, 7, 15), at(12, 8, 15)),
+            timed("Test", at(12, 8, 15), at(12, 9, 15)),
+        ).columns[0].events
 
-        assertEquals(344f / 360, box.top, delta)
+        assertEquals(listOf(0f to 1f, 0f to 1f, 0f to 1f), events.map { it.left to it.right })
+        // The range is 6-12 at one dp per minute: 15 minutes are 15dp, not enough for a regular title.
+        assertEquals(60f / 360, events[0].top, delta)
+        assertEquals(75f / 360, events[0].bottom, delta)
+        assertEquals(75f / 360, events[1].top, delta)
+        assertEquals(TitleSize.COMPACT, events[0].title)
+        assertEquals(TitleSize.NORMAL, events[1].title)
+    }
+
+    @Test
+    fun titleSizeFollowsTheBoxHeight() {
+        val events = layout(
+            timed("30 minutes", at(12, 9), at(12, 9, 30)),
+            timed("10 minutes", at(12, 10), at(12, 10, 10)),
+            timed("5 minutes", at(12, 11), at(12, 11, 5)),
+        ).columns[0].events
+
+        assertEquals(listOf(TitleSize.NORMAL, TitleSize.COMPACT, TitleSize.NONE), events.map { it.title })
+    }
+
+    @Test
+    fun largerFontsNeedTallerBoxes() {
+        val now = LocalDateTime.of(2026, 10, 12, 8, 0).atZone(zone)
+        val snapshot = Snapshot(splitIntoDays(listOf(timed("A", at(12, 9), at(12, 9, 20))), monday, 3, zone), now)
+
+        val box = layoutWidget(snapshot, heightDp, fontScale = 1.5f, locale = Locale.ITALY).columns[0].events.single()
+
+        // 20dp fit a regular title at normal font size, but not at 1.5x.
+        assertEquals(TitleSize.COMPACT, box.title)
+    }
+
+    @Test
+    fun eventWithoutDurationIsAThinBar() {
+        val box = layout(timed("Reminder", at(12, 9), at(12, 9))).columns[0].events.single()
+
+        // The range is 6-12. The thinnest bar is 3dp, that is 3 minutes at one dp per minute.
+        assertEquals(180f / 360, box.top, delta)
+        assertEquals(183f / 360, box.bottom, delta)
+        assertEquals(TitleSize.NONE, box.title)
+    }
+
+    @Test
+    fun eventWithoutDurationBesideAnEventStartingTogether() {
+        val events = layout(timed("Reminder", at(12, 9), at(12, 9)), timed("Meeting", at(12, 9), at(12, 10))).columns[0].events
+
+        assertEquals(listOf(2, 2), events.map { (it.right - it.left).let { width -> Math.round(1 / width) } })
+    }
+
+    @Test
+    fun thinEventGrowsIntoTheFreeTimeAfterIt() {
+        // 60dp for 6 hours: the thinnest bar (3dp) lasts 18 minutes.
+        val box = layout(timed("A", at(12, 9), at(12, 9, 5)), height = 98f).columns[0].events.single()
+
+        assertEquals(120f / 360, box.top, delta)
+        assertEquals(138f / 360, box.bottom, delta)
+    }
+
+    @Test
+    fun thinEventFollowedRightAwayGrowsUpwardsInsteadOfSideways() {
+        // The bar cannot grow over the next event: it takes the free time before it, and both
+        // events keep the full width because their times do not overlap.
+        val events = layout(timed("A", at(12, 9), at(12, 9, 5)), timed("B", at(12, 9, 5), at(12, 10)), height = 98f)
+            .columns[0].events
+
+        assertEquals(listOf(0f to 1f, 0f to 1f), events.map { it.left to it.right })
+        assertEquals(107f / 360, events[0].top, delta)
+        assertEquals(125f / 360, events[0].bottom, delta)
+        assertEquals(125f / 360, events[1].top, delta)
+    }
+
+    @Test
+    fun thinEventBetweenTwoEventsKeepsItsRealLength() {
+        val events = layout(
+            timed("Before", at(12, 8), at(12, 9)),
+            timed("Thin", at(12, 9), at(12, 9, 5)),
+            timed("After", at(12, 9, 5), at(12, 10)),
+            height = 98f,
+        ).columns[0].events
+
+        // The range is 6-12.
+        assertEquals(180f / 360, events[1].top, delta)
+        assertEquals(185f / 360, events[1].bottom, delta)
+    }
+
+    @Test
+    fun barAtTheEndOfTheRangeGrowsUpwards() {
+        // The range is 18-24: a one-minute event at 23:59 cannot grow past midnight, so it starts earlier.
+        val box = layout(timed("A", at(12, 23, 59), at(13, 0))).columns[0].events.single()
+
+        assertEquals(357f / 360, box.top, delta)
         assertEquals(1f, box.bottom, delta)
     }
 

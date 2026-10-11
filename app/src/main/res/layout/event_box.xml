@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- An event tall enough for its title in regular size, on as many lines as fit. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/event_box"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_marginHorizontal="@dimen/event_margin"
+    android:layout_marginBottom="1dp"
+    android:layout_weight="1"
+    android:background="@drawable/event_background"
+    android:ellipsize="end"
+    android:fontFamily="sans-serif-medium"
+    android:includeFontPadding="false"
+    android:paddingHorizontal="@dimen/event_padding_horizontal"
+    android:paddingTop="2dp"
+    android:textSize="11sp" />

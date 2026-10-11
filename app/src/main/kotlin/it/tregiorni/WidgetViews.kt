@@ -76,9 +76,16 @@ class WidgetViews(private val context: Context) {
     private fun event(box: EventBox) = RemoteViews(packageName, R.layout.event).apply {
         setWeightSums(R.id.event_v1, R.id.event_v2, box.top, box.bottom)
         setWeightSums(R.id.event_h1, R.id.event_h2, box.left, box.right)
-        setTextViewText(R.id.event_text, box.event.title)
-        setEventColors(R.id.event_text, box.event.color, box.past)
-        setInt(R.id.event_text, "setMaxLines", box.maxLines)
+        addView(R.id.event_h2, eventBox(box))
+    }
+
+    private fun eventBox(box: EventBox): RemoteViews {
+        val layout = if (box.title == TitleSize.NORMAL) R.layout.event_box else R.layout.event_box_compact
+        return RemoteViews(packageName, layout).apply {
+            if (box.title != TitleSize.NONE) setTextViewText(R.id.event_box, box.event.title)
+            if (box.title == TitleSize.NORMAL) setInt(R.id.event_box, "setMaxLines", box.maxLines)
+            setEventColors(R.id.event_box, box.event.color, box.past)
+        }
     }
 
     private fun nowLine(top: Float) = RemoteViews(packageName, R.layout.now_line).apply {

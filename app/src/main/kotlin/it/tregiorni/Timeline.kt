@@ -112,7 +112,8 @@ fun hourRange(days: List<Day>, minHours: Int = 6, default: HourRange = HourRange
 /**
  * Assigns side-by-side columns to overlapping segments. Each group of transitively overlapping
  * segments is split into as many columns as it needs. Segments shorter than [minDuration] minutes
- * are drawn taller than they are, so they count as lasting [minDuration].
+ * (the thinnest bar the widget draws) count as lasting [minDuration], because that is how much space
+ * they take.
  */
 fun placeSegments(segments: List<Segment>, minDuration: Int): List<PlacedSegment> {
     val sorted = segments.sortedWith(compareBy<Segment> { it.startMinute }.thenByDescending { it.endMinute })

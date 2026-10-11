@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    An event placed by fractions of its day column. A LinearLayout with weightSum S and a single
+    Places an event by fractions of its day column. A LinearLayout with weightSum S and a single
     child of weight 1 gives that child 1/S of the space; gravity decides on which side. WidgetViews
     sets the four weightSums: event_v1 and event_v2 place it vertically (start and end time),
-    event_h1 and event_h2 horizontally (its column among overlapping events).
+    event_h1 and event_h2 horizontally (its column among overlapping events). The box itself
+    (event_box.xml or event_box_compact.xml) is added into event_h2.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -36,23 +37,7 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/event_text"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginHorizontal="@dimen/event_margin"
-                    android:layout_marginBottom="1dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/event_background"
-                    android:ellipsize="end"
-                    android:fontFamily="sans-serif-medium"
-                    android:includeFontPadding="false"
-                    android:paddingHorizontal="@dimen/event_padding_horizontal"
-                    android:paddingTop="2dp"
-                    android:textSize="11sp" />
-            </LinearLayout>
+                android:orientation="horizontal" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

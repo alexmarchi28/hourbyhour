@@ -32,7 +32,8 @@ sealed interface BannerCell {
 
 /**
  * An event drawn in a day column: it covers [top, bottom] of the column height and [left, right]
- * of its width, as fractions between 0 and 1.
+ * of its width, as fractions between 0 and 1. The box always matches the real start and end time
+ * (only events shorter than a thin bar are drawn a little longer), and the title adapts to it.
  */
 data class EventBox(
     val event: CalendarEvent,
@@ -40,10 +41,22 @@ data class EventBox(
     val bottom: Float,
     val left: Float,
     val right: Float,
-    /** How many lines of the title fit, estimated from the widget height. */
+    val title: TitleSize,
+    /** How many lines of the title fit, estimated from the widget height. Used with [TitleSize.NORMAL]. */
     val maxLines: Int,
     val past: Boolean,
 )
+
+enum class TitleSize {
+    /** Regular text, on as many lines as fit. */
+    NORMAL,
+
+    /** One line of text that shrinks to fit the real height of the box. */
+    COMPACT,
+
+    /** No title: the box is just a colored bar. */
+    NONE,
+}
 
 /** [nowLine] is the position of the current time as a fraction of the height, null when not shown. */
 data class DayColumn(val events: List<EventBox>, val nowLine: Float?)
@@ -76,26 +89,32 @@ fun layoutWidget(snapshot: Snapshot, heightDp: Float, fontScale: Float, locale: 
         if ((hour - range.start) % labelStep == 0) hour.toString() else ""
     }
 
-    // Short events are drawn at least one text line tall.
     val lineHeightDp = LINE_HEIGHT_SP * fontScale
-    val minDuration = ceil((lineHeightDp + EVENT_PADDING_DP) / dpPerMinute).toInt()
+    val minBar = ceil(MIN_BAR_DP / dpPerMinute).toInt().coerceAtLeast(1)
     fun fraction(minute: Int) = (minute - rangeStart).toFloat() / (rangeEnd - rangeStart)
 
     val nowMillis = snapshot.now.toInstant().toEpochMilli()
     val nowMinute = snapshot.now.hour * 60 + snapshot.now.minute
     val columns = days.map { day ->
-        val events = placeSegments(day.timed, minDuration).map { placed ->
-            val segment = placed.segment
-            // Near the end of the range a short event grows upwards instead of overflowing.
-            val end = maxOf(segment.endMinute, segment.startMinute + minDuration).coerceAtMost(rangeEnd)
-            val start = minOf(segment.startMinute, end - minDuration).coerceAtLeast(rangeStart)
+        // Columns follow the real times, so that events that do not overlap never sit side by side.
+        // Events without duration count as one minute.
+        val placed = placeSegments(day.timed, minDuration = 1)
+        val events = placed.map { box ->
+            val segment = box.segment
+            val (start, end) = visibleSpan(box, placed, minBar, rangeStart, rangeEnd)
+            val boxHeightDp = (end - start) * dpPerMinute
             EventBox(
                 event = segment.event,
                 top = fraction(start),
                 bottom = fraction(end),
-                left = placed.column.toFloat() / placed.columns,
-                right = (placed.column + 1f) / placed.columns,
-                maxLines = (((end - start) * dpPerMinute - EVENT_PADDING_DP) / lineHeightDp).toInt().coerceAtLeast(1),
+                left = box.left,
+                right = box.right,
+                title = when {
+                    boxHeightDp >= lineHeightDp + EVENT_PADDING_DP -> TitleSize.NORMAL
+                    boxHeightDp >= MIN_TITLE_SP * fontScale -> TitleSize.COMPACT
+                    else -> TitleSize.NONE
+                },
+                maxLines = ((boxHeightDp - EVENT_PADDING_DP) / lineHeightDp).toInt().coerceAtLeast(1),
                 past = segment.event.end <= nowMillis,
             )
         }
@@ -103,6 +122,25 @@ fun layoutWidget(snapshot: Snapshot, heightDp: Float, fontScale: Float, locale: 
         DayColumn(events, nowLine)
     }
     return WidgetLayout(headers, bannerRows, hourLabels, columns)
+}
+
+private val PlacedSegment.left get() = column.toFloat() / columns
+private val PlacedSegment.right get() = (column + 1f) / columns
+
+/**
+ * The minutes [box] covers on the grid: its real start and end, except that an event shorter than
+ * [minBar] grows to a visible bar. It grows only into free time, first after the event and then
+ * before it, never over another event in the same horizontal space: overlapping boxes would suggest
+ * overlapping times.
+ */
+private fun visibleSpan(box: PlacedSegment, all: List<PlacedSegment>, minBar: Int, rangeStart: Int, rangeEnd: Int): Pair<Int, Int> {
+    val segment = box.segment
+    val neighbors = all.filter { it !== box && it.left < box.right && it.right > box.left }
+    val nextStart = neighbors.map { it.segment.startMinute }.filter { it >= segment.startMinute }.minOrNull() ?: rangeEnd
+    val previousEnd = neighbors.map { it.segment.endMinute }.filter { it <= segment.startMinute }.maxOrNull() ?: rangeStart
+    val end = maxOf(segment.endMinute, minOf(segment.startMinute + minBar, nextStart, rangeEnd))
+    val start = minOf(segment.startMinute, maxOf(end - minBar, previousEnd, rangeStart))
+    return start to end
 }
 
 /** When a day has more all-day events than rows, its last row says how many are not shown. */
@@ -125,3 +163,12 @@ private const val BANNER_ROW_HEIGHT_DP = 18f
 private const val LABEL_SPACING_SP = 14f
 private const val LINE_HEIGHT_SP = 13f
 private const val EVENT_PADDING_DP = 3f
+
+/** The thinnest an event is drawn, so that it stays visible. */
+private const val MIN_BAR_DP = 3f
+
+/**
+ * Below this height even the smallest compact title (8sp, see event_box_compact.xml) does not fit.
+ * Autosize does not go lower: long titles are cut with an ellipsis instead of becoming unreadable.
+ */
+private const val MIN_TITLE_SP = 8f
