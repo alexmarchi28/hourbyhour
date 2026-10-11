@@ -32,6 +32,7 @@ Prima di aggiungere una dipendenza, chiedi.
 
 ```
 Timeline.kt           logica pura, testata su JVM: eventi → giorni, fascia oraria, colonne per le sovrapposizioni
+GoogleColors.kt       logica pura, testata su JVM: colori del provider → colori mostrati da Google Calendar
 CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse)
 WidgetViews.kt        costruisce le RemoteViews del widget a partire da uno Snapshot
 WidgetUpdater.kt      carica gli eventi, aggiorna i widget, programma il prossimo aggiornamento
@@ -40,7 +41,7 @@ CalendarChangeJob.kt  JobService con trigger sul content URI del calendario
 MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", anteprima del widget
 ```
 
-`Timeline.kt` non dipende da Android: la logica nuova va lì, con i suoi test.
+`Timeline.kt` e `GoogleColors.kt` non dipendono da Android: la logica nuova va lì, con i suoi test.
 
 Regole sulla visualizzazione (in `Timeline.kt`):
 
@@ -51,6 +52,17 @@ Regole sulla visualizzazione (in `Timeline.kt`):
 
 `CalendarSource` scarta i calendari nascosti, gli eventi cancellati e gli inviti rifiutati.
 
+## Colori degli eventi
+
+Il provider salva i colori della **vecchia palette dell'API** di Google Calendar (Grafite = `#E1E1E1`, grigio chiaro), mentre l'app Google Calendar mostra colori diversi. `GoogleColors` riproduce i suoi passaggi, ricavati dal codice di Google Calendar 2026.38:
+
+1. **Palette attuale.** I colori legacy di calendario (24) e di evento (11) diventano uno dei 24 colori attuali (Grafite `#616161`). I colori personalizzati con luminosità HSV > 0,79 hanno saturazione ×1,3 e luminosità ×0,8. L'HSV è calcolato in `float`, come Skia.
+2. **Adattamento al tema.** In CIE LCh (come `ColorUtils` di AndroidX) luminosità e croma passano per curve lineari a tratti, diverse per tema chiaro e scuro. La tonalità resta uguale.
+
+I test usano colori campionati da screenshot di Google Calendar sul telefono. Se Google cambia palette o curve, ricampiona e aggiorna i test (vedi "Verifica sul telefono").
+
+Nel widget ogni colore di evento si imposta per **entrambi i temi** (`setColorStateList`/`setColorInt` con le varianti chiaro e scuro): il launcher sceglie quella giusta e il cambio di tema è immediato.
+
 ## Come è disegnato il widget
 
 **Non usare bitmap né dimensioni assolute.** I launcher possono dichiarare una dimensione diversa da quella reale: il launcher Motorola dichiara circa 3/4 dell'altezza vera, quindi una bitmap viene stirata. Il widget è fatto di layout posizionati con i **pesi**:
@@ -59,13 +71,15 @@ Regole sulla visualizzazione (in `Timeline.kt`):
 - L'altezza dichiarata dal launcher serve solo per stime: densità delle etichette delle ore, altezza minima degli eventi brevi, numero di righe di testo.
 - Nei layout dei widget si possono usare solo le classi ammesse da `RemoteViews`: **niente `View` né `Space`**, per spaziatori e linee usa `FrameLayout`.
 - Il launcher può riapplicare le nuove `RemoteViews` sopra quelle vecchie invece di ricrearle: i contenitori riempiti a runtime vanno svuotati con `removeAllViews` e devono contenere **solo** view aggiunte a runtime.
-- Colori statici in `values/colors.xml` e `values-night/colors.xml`: il widget segue subito il tema di sistema. In codice si impostano solo i colori degli eventi.
+- Colori statici in `values/colors.xml` e `values-night/colors.xml`: il widget segue subito il tema di sistema. In codice si impostano solo i colori degli eventi, con una variante per tema (vedi "Colori degli eventi").
 
 Aggiornamenti: alla aggiunta e al ridimensionamento del widget, quando cambia il calendario (job con trigger sul content URI, che si riprogramma dopo ogni esecuzione), e ogni quarto d'ora con un allarme `RTC` che non sveglia il telefono (sposta la linea dell'ora e cambia giorno a mezzanotte). `updatePeriodMillis` (30 min) è solo una rete di sicurezza.
 
 ## Verifica sul telefono
 
-I test JVM coprono solo `Timeline.kt`. Ogni modifica al widget va provata sul telefono: installa, forza l'aggiornamento e guarda il risultato (`adb exec-out screencap -p > shot.png`). Prova anche dimensioni diverse (ridimensionando il widget) e il tema chiaro (`adb shell cmd uimode night no`, poi ripristina con `yes`). L'anteprima nell'app usa le stesse `RemoteViews`, ma non sostituisce la prova sul launcher.
+I test JVM coprono solo `Timeline.kt` e `GoogleColors.kt`. Ogni modifica al widget va provata sul telefono: installa, forza l'aggiornamento e guarda il risultato (`adb exec-out screencap -p > shot.png`). Prova anche dimensioni diverse (ridimensionando il widget) e il tema chiaro (`adb shell cmd uimode night no`, poi ripristina con `yes`). L'anteprima nell'app usa le stesse `RemoteViews`, ma non sostituisce la prova sul launcher.
+
+Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (stesso tema) e leggi il colore di un pixel al centro di un evento, lontano dal testo.
 
 ## Convenzioni
 
