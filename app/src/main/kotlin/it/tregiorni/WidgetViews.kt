@@ -53,15 +53,24 @@ class WidgetViews(private val context: Context) {
         return root
     }
 
-    private fun bannerCell(cell: BannerCell): RemoteViews = when (cell) {
-        is BannerCell.Event -> RemoteViews(packageName, R.layout.banner_chip).apply {
-            setTextViewText(R.id.banner_chip, cell.event.title)
-            setEventColors(R.id.banner_chip, cell.event.color, past = false)
+    /** Every day gets the same cell, so that cells line up with the grid columns below. */
+    private fun bannerCell(cell: BannerCell) = RemoteViews(packageName, R.layout.banner_cell).apply {
+        when (cell) {
+            is BannerCell.Event -> addView(
+                R.id.banner_cell,
+                RemoteViews(packageName, R.layout.banner_chip).apply {
+                    setTextViewText(R.id.banner_chip, cell.event.title)
+                    setEventColors(R.id.banner_chip, cell.event.color, past = false)
+                },
+            )
+            is BannerCell.More -> addView(
+                R.id.banner_cell,
+                RemoteViews(packageName, R.layout.banner_more).apply {
+                    setTextViewText(R.id.banner_more, "+${cell.count}")
+                },
+            )
+            BannerCell.Empty -> Unit
         }
-        is BannerCell.More -> RemoteViews(packageName, R.layout.banner_more).apply {
-            setTextViewText(R.id.banner_more, "+${cell.count}")
-        }
-        BannerCell.Empty -> RemoteViews(packageName, R.layout.banner_empty)
     }
 
     private fun event(box: EventBox) = RemoteViews(packageName, R.layout.event).apply {

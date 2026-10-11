@@ -7,7 +7,7 @@
 
     <!-- Separator from the previous day (or from the hour labels). -->
     <FrameLayout
-        android:layout_width="1dp"
+        android:layout_width="@dimen/column_separator"
         android:layout_height="match_parent"
         android:background="@color/widget_grid" />
 </FrameLayout>

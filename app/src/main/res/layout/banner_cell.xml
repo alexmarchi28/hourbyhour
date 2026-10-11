@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One day of an all-day row. All cells are alike (no margins, same weight), so they get exactly
+    the width of the grid columns below; the chip or the "+N" text is added inside.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/banner_cell"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:paddingStart="@dimen/column_separator"
+    tools:ignore="RtlSymmetry" />

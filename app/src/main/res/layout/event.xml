@@ -10,8 +10,7 @@
     android:id="@+id/event_v1"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginStart="2dp"
-    android:layout_marginEnd="1dp"
+    android:layout_marginStart="@dimen/column_separator"
     android:gravity="bottom"
     android:orientation="vertical"
     tools:ignore="NestedWeights,UselessParent">
@@ -43,14 +42,14 @@
                     android:id="@+id/event_text"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginEnd="1dp"
+                    android:layout_marginHorizontal="@dimen/event_margin"
                     android:layout_marginBottom="1dp"
                     android:layout_weight="1"
                     android:background="@drawable/event_background"
                     android:ellipsize="end"
                     android:fontFamily="sans-serif-medium"
                     android:includeFontPadding="false"
-                    android:paddingHorizontal="3dp"
+                    android:paddingHorizontal="@dimen/event_padding_horizontal"
                     android:paddingTop="2dp"
                     android:textSize="11sp" />
             </LinearLayout>

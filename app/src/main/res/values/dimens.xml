@@ -2,4 +2,13 @@
 <resources>
     <!-- Width of the hour labels column, also used to align headers and banners with the grid. -->
     <dimen name="widget_gutter">22dp</dimen>
+
+    <!--
+        Every day column, in the grid (day_column.xml) and in the all-day rows (banner_cell.xml),
+        starts with a separator this wide. Events and all-day chips sit after it with the same
+        margins on both sides, so their edges line up in every column.
+    -->
+    <dimen name="column_separator">1dp</dimen>
+    <dimen name="event_margin">1dp</dimen>
+    <dimen name="event_padding_horizontal">3dp</dimen>
 </resources>
