@@ -5,4 +5,11 @@
     <string name="widget_description">I prossimi tre giorni, ora per ora</string>
     <string name="widget_loading">Caricamento…</string>
     <string name="widget_no_permission">Apri Tre Giorni e consenti l\'accesso al calendario</string>
+
+    <string name="status_needs_permission">Tre Giorni legge gli eventi dal calendario del telefono, che Google Calendar tiene sincronizzato. Nessun login: i dati non escono dal telefono.</string>
+    <string name="status_ready">Accesso al calendario consentito. Aggiungi il widget alla schermata Home e ridimensionalo come preferisci.</string>
+    <string name="grant_access">Consenti accesso al calendario</string>
+    <string name="open_settings">Apri le impostazioni dell\'app</string>
+    <string name="add_widget">Aggiungi il widget alla Home</string>
+    <string name="preview">Anteprima</string>
 </resources>
