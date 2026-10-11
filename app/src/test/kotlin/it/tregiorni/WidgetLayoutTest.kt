@@ -159,6 +159,13 @@ class WidgetLayoutTest {
     }
 
     @Test
+    fun eventEndingNowIsPast() {
+        val box = layout(timed("A", at(12, 9), at(12, 10)), nowHour = 10).columns[0].events.single()
+
+        assertTrue(box.past)
+    }
+
+    @Test
     fun nowLineIsOnlyOnTodayColumn() {
         val columns = layout(timed("A", at(12, 9), at(12, 10)), nowHour = 10, nowMinute = 30).columns
 

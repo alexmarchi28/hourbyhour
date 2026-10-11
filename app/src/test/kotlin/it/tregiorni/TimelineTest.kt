@@ -152,6 +152,18 @@ class TimelineTest {
     }
 
     @Test
+    fun columnFreedExactlyWhenTheNextSegmentStartsIsReused() {
+        // B ends at 10:00 while A is still going: C, starting at 10:00, takes B's column.
+        val a = segment(540, 660)
+        val b = segment(570, 600)
+        val c = segment(600, 630)
+        val placed = placeSegments(listOf(a, b, c), minDuration = 0).associate { it.segment to it }
+
+        assertEquals(1, placed.getValue(c).column)
+        assertEquals(listOf(2, 2, 2), listOf(a, b, c).map { placed.getValue(it).columns })
+    }
+
+    @Test
     fun shortSegmentsOverlapThroughMinimumDuration() {
         val placed = placeSegments(listOf(segment(600, 600), segment(605, 605)), minDuration = 15)
 
