@@ -75,7 +75,7 @@ class MainActivity : Activity() {
             runOnUiThread {
                 if (isDestroyed) return@runOnUiThread
                 preview.removeAllViews()
-                preview.addView(WidgetUpdater.views(context, snapshot, heightDp).apply(this, preview))
+                preview.addView(WidgetUpdater.views(context, snapshot, heightDp, WidgetSettings()).apply(this, preview))
             }
         }
     }

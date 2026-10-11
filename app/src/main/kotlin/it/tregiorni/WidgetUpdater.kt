@@ -32,13 +32,12 @@ object WidgetUpdater {
     }
 
     /** The widget content, or a message asking for calendar access when [snapshot] is null. */
-    fun views(context: Context, snapshot: Snapshot?, heightDp: Float): RemoteViews =
-        if (snapshot == null) {
-            RemoteViews(context.packageName, R.layout.widget_message)
-        } else {
-            val fontScale = context.resources.configuration.fontScale
-            WidgetViews(context).build(layoutWidget(snapshot, heightDp, fontScale, Locale.getDefault()))
-        }
+    fun views(context: Context, snapshot: Snapshot?, heightDp: Float, settings: WidgetSettings): RemoteViews {
+        val views = WidgetViews(context, settings)
+        if (snapshot == null) return views.message()
+        val fontScale = context.resources.configuration.fontScale
+        return views.build(layoutWidget(snapshot, heightDp, fontScale, Locale.getDefault()))
+    }
 
     /** Redraws every widget. Returns false when none is on the home screen. */
     fun updateAll(context: Context): Boolean {
@@ -52,8 +51,10 @@ object WidgetUpdater {
         if (widgetIds.isEmpty()) return
         try {
             val snapshot = loadSnapshot(context)
+            val store = WidgetSettingsStore(context)
             for (id in widgetIds) {
-                manager.updateAppWidget(id, views(context, snapshot, estimatedHeightDp(manager.getAppWidgetOptions(id))))
+                val heightDp = estimatedHeightDp(manager.getAppWidgetOptions(id))
+                manager.updateAppWidget(id, views(context, snapshot, heightDp, store.load(id)))
             }
         } catch (e: RuntimeException) {
             // The widgets keep their last content and the next refresh tries again, instead of

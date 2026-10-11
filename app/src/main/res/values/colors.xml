@@ -2,8 +2,11 @@
 <resources>
     <color name="ic_launcher_background">#1A73E8</color>
 
-    <!-- Widget, light theme. The night variants are in values-night. -->
-    <color name="widget_background">#F2FFFFFF</color>
+    <!--
+        Widget, light theme. The night variants are in values-night. The background is opaque here:
+        WidgetViews applies the transparency chosen for each widget.
+    -->
+    <color name="widget_background">#FFFFFF</color>
     <color name="widget_text">#1F1F1F</color>
     <color name="widget_text_secondary">#5F6368</color>
     <color name="widget_grid">#E3E3E3</color>

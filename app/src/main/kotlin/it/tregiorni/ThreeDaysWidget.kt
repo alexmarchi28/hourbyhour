@@ -24,9 +24,13 @@ class ThreeDaysWidget : AppWidgetProvider() {
         updateAsync { WidgetUpdater.update(context, manager, widgetIds) }
     }
 
-    /** Called when the widget is resized: redraw the bitmap at the new size. */
+    /** Called when the widget is resized: redraw it for the new size. */
     override fun onAppWidgetOptionsChanged(context: Context, manager: AppWidgetManager, widgetId: Int, newOptions: Bundle) {
         updateAsync { WidgetUpdater.update(context, manager, intArrayOf(widgetId)) }
+    }
+
+    override fun onDeleted(context: Context, widgetIds: IntArray) {
+        WidgetSettingsStore(context).delete(widgetIds)
     }
 
     override fun onDisabled(context: Context) {

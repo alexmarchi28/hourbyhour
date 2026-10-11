@@ -13,13 +13,17 @@ import android.widget.RemoteViews
  *
  * All decisions about what to show and where belong in [layoutWidget], which is unit tested.
  */
-class WidgetViews(private val context: Context) {
+class WidgetViews(private val context: Context, private val settings: WidgetSettings) {
     private val packageName = context.packageName
     private val lightBackground = themedColor(R.color.widget_background, night = false)
     private val darkBackground = themedColor(R.color.widget_background, night = true)
 
+    /** The message shown instead of the events when calendar access is missing. */
+    fun message() = RemoteViews(packageName, R.layout.widget_message).apply { setBackground() }
+
     fun build(layout: WidgetLayout): RemoteViews {
         val root = RemoteViews(packageName, R.layout.widget)
+        root.setBackground()
         // The launcher may apply these views on top of the previous ones instead of inflating the
         // layout again: without this, every update would add another copy of the content.
         for (container in intArrayOf(R.id.headers, R.id.banners, R.id.hours, R.id.columns)) {
@@ -90,6 +94,19 @@ class WidgetViews(private val context: Context) {
 
     private fun nowLine(top: Float) = RemoteViews(packageName, R.layout.now_line).apply {
         setFloat(R.id.now_position, "setWeightSum", 1f / (1f - top.coerceAtMost(MAX_FRACTION)))
+    }
+
+    /**
+     * The background takes the transparency of this widget. Tinting the rounded background shape,
+     * rather than replacing it, keeps its corners; one color per theme as for the events.
+     */
+    private fun RemoteViews.setBackground() {
+        setColorStateList(
+            android.R.id.background,
+            "setBackgroundTintList",
+            ColorStateList.valueOf(withAlpha(lightBackground, settings.backgroundAlpha)),
+            ColorStateList.valueOf(withAlpha(darkBackground, settings.backgroundAlpha)),
+        )
     }
 
     /** One color per theme: RemoteViews applies the one matching the launcher theme. */
