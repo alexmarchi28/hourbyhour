@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Card -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,34h36a4,4 0 0 1 4,4v32a4,4 0 0 1 -4,4h-36a4,4 0 0 1 -4,-4v-32a4,4 0 0 1 4,-4z" />
+    <!-- Header -->
+    <path
+        android:fillColor="#D2E3FC"
+        android:pathData="M36,34h36a4,4 0 0 1 4,4v4h-44v-4a4,4 0 0 1 4,-4z" />
+    <!-- Events: one column per day -->
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M35,46h11v10h-11z" />
+    <path
+        android:fillColor="#F9AB00"
+        android:pathData="M48.5,52h11v16h-11z" />
+    <path
+        android:fillColor="#1E8E3E"
+        android:pathData="M62,46h11v6h-11z" />
+    <path
+        android:fillColor="#D93025"
+        android:pathData="M62,56h11v10h-11z" />
+</vector>

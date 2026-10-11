@@ -1,0 +1,12 @@
+# Gradle e build
+.gradle/
+.kotlin/
+build/
+
+# Configurazione locale (percorso dell'SDK)
+/local.properties
+
+# IDE
+.idea/
+*.iml
+captures/
