@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-**HourByHour** (prima "Tre Giorni"; la cartella del progetto ha ancora il vecchio nome) è un'app Android con un widget per la schermata Home che mostra **da 1 a 7 giorni (da oggi, o la settimana da lunedì), ora per ora**, con gli eventi di Google Calendar nella loro fascia oraria. Il widget è di sola lettura: nessuna azione al tocco.
+**HourByHour** (prima "Tre Giorni") è un'app Android con un widget per la schermata Home che mostra **da 1 a 7 giorni (da oggi, o la settimana da lunedì), ora per ora**, con gli eventi di Google Calendar nella loro fascia oraria. Il widget è di sola lettura: nessuna azione al tocco.
 
 Gli eventi si leggono da `CalendarContract`, il calendario del telefono che Google Calendar tiene sincronizzato. **Niente login Google e niente Calendar API**: l'app non ha il permesso INTERNET e i dati non escono dal telefono.
 
