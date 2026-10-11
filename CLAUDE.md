@@ -44,6 +44,7 @@ WidgetUpdater.kt      carica gli eventi, aggiorna i widget, programma il prossim
 ThreeDaysWidget.kt    AppWidgetProvider: aggiunta, ridimensionamento, cambi di ora/fuso/lingua
 CalendarChangeJob.kt  JobService con trigger sul content URI del calendario
 MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", anteprima del widget
+WidgetPreview.kt      anteprima del widget nelle schermate dell'app (stesse RemoteViews del launcher)
 ```
 
 `Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt` e `WidgetSettings.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `splitIntoDays` → `Snapshot` → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
@@ -75,7 +76,7 @@ Ogni widget ha le sue impostazioni (`WidgetSettings`), salvate per id del widget
 - **Trasparenza dello sfondo:** da 0 a 100% a passi di 5, predefinita 5% (l'alfa `0xF2` di prima). In `colors.xml` lo sfondo è **opaco**: `WidgetViews` applica l'alfa di ogni widget come tint della forma arrotondata, una variante per tema.
 - Il testo segue il tema chiaro/scuro e non ha ombre (scelta dell'utente): sta a lui scegliere uno sfondo della Home adatto, oppure poca trasparenza.
 - Nuove impostazioni (ad esempio il numero di giorni) vanno in `WidgetSettings` e in questa schermata.
-- `MainActivity` mostra l'anteprima con le impostazioni predefinite.
+- `MainActivity` mostra l'anteprima (`WidgetPreview`) con le impostazioni predefinite.
 
 ## Colori degli eventi
 

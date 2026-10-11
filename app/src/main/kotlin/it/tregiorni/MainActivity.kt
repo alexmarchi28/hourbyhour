@@ -11,15 +11,13 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.TextView
-import kotlin.concurrent.thread
 
 /** Asks for calendar access, offers to add the widget and shows a preview of it. */
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var grantButton: Button
-    private lateinit var preview: FrameLayout
+    private lateinit var preview: WidgetPreview
     private var deniedForever = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,7 +25,7 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
         status = findViewById(R.id.status)
         grantButton = findViewById(R.id.grant)
-        preview = findViewById(R.id.preview)
+        preview = WidgetPreview(this, findViewById(R.id.preview))
 
         grantButton.setOnClickListener {
             if (deniedForever) {
@@ -62,22 +60,9 @@ class MainActivity : Activity() {
         status.setText(if (granted) R.string.status_ready else R.string.status_needs_permission)
         grantButton.visibility = if (granted) View.GONE else View.VISIBLE
         grantButton.setText(if (deniedForever) R.string.open_settings else R.string.grant_access)
-        renderPreview()
-    }
-
-    private fun renderPreview() {
+        // Calendar access may have changed since the widgets were last drawn.
         val context = applicationContext
-        val heightDp = preview.layoutParams.height / resources.displayMetrics.density
-        thread {
-            val snapshot = WidgetUpdater.loadSnapshot(context)
-            // Calendar access may have changed since the widgets were last drawn.
-            WidgetUpdater.updateAll(context)
-            runOnUiThread {
-                if (isDestroyed) return@runOnUiThread
-                preview.removeAllViews()
-                preview.addView(WidgetUpdater.views(context, snapshot, heightDp, WidgetSettings()).apply(this, preview))
-            }
-        }
+        preview.reload { WidgetUpdater.updateAll(context) }
     }
 
     private companion object {

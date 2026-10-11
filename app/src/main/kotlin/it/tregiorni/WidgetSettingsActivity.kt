@@ -6,7 +6,6 @@ import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import kotlin.concurrent.thread
@@ -19,10 +18,8 @@ class WidgetSettingsActivity : Activity() {
     private var widgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     private lateinit var store: WidgetSettingsStore
     private lateinit var settings: WidgetSettings
-    private lateinit var preview: FrameLayout
+    private lateinit var preview: WidgetPreview
     private lateinit var transparencyValue: TextView
-    private var snapshot: Snapshot? = null
-    private var snapshotLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,7 +34,7 @@ class WidgetSettingsActivity : Activity() {
         setContentView(R.layout.activity_widget_settings)
         store = WidgetSettingsStore(this)
         settings = store.load(widgetId)
-        preview = findViewById(R.id.preview)
+        preview = WidgetPreview(this, findViewById(R.id.preview))
         transparencyValue = findViewById(R.id.transparency_value)
 
         findViewById<SeekBar>(R.id.transparency).apply {
@@ -56,17 +53,7 @@ class WidgetSettingsActivity : Activity() {
         }
         findViewById<Button>(R.id.done).setOnClickListener { save() }
         showSettings()
-
-        val context = applicationContext
-        thread {
-            val loaded = WidgetUpdater.loadSnapshot(context)
-            runOnUiThread {
-                if (isDestroyed) return@runOnUiThread
-                snapshot = loaded
-                snapshotLoaded = true
-                renderPreview()
-            }
-        }
+        preview.reload()
     }
 
     /** The activity is exported for the launcher: ignore ids that are not widgets of this app. */
@@ -77,14 +64,7 @@ class WidgetSettingsActivity : Activity() {
 
     private fun showSettings() {
         transparencyValue.text = getString(R.string.transparency_value, settings.transparency)
-        renderPreview()
-    }
-
-    private fun renderPreview() {
-        if (!snapshotLoaded) return
-        val heightDp = preview.layoutParams.height / resources.displayMetrics.density
-        preview.removeAllViews()
-        preview.addView(WidgetUpdater.views(applicationContext, snapshot, heightDp, settings).apply(this, preview))
+        preview.settings = settings
     }
 
     private fun save() {

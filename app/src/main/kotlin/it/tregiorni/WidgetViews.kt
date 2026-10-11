@@ -19,11 +19,11 @@ class WidgetViews(private val context: Context, private val settings: WidgetSett
     private val darkBackground = themedColor(R.color.widget_background, night = true)
 
     /** The message shown instead of the events when calendar access is missing. */
-    fun message() = RemoteViews(packageName, R.layout.widget_message).apply { setBackground() }
+    fun message() = RemoteViews(packageName, R.layout.widget_message).apply { tintBackground() }
 
     fun build(layout: WidgetLayout): RemoteViews {
         val root = RemoteViews(packageName, R.layout.widget)
-        root.setBackground()
+        root.tintBackground()
         // The launcher may apply these views on top of the previous ones instead of inflating the
         // layout again: without this, every update would add another copy of the content.
         for (container in intArrayOf(R.id.headers, R.id.banners, R.id.hours, R.id.columns)) {
@@ -100,7 +100,7 @@ class WidgetViews(private val context: Context, private val settings: WidgetSett
      * The background takes the transparency of this widget. Tinting the rounded background shape,
      * rather than replacing it, keeps its corners; one color per theme as for the events.
      */
-    private fun RemoteViews.setBackground() {
+    private fun RemoteViews.tintBackground() {
         setColorStateList(
             android.R.id.background,
             "setBackgroundTintList",

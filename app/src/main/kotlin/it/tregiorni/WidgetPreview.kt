@@ -1,0 +1,43 @@
+package it.tregiorni
+
+import android.app.Activity
+import android.widget.FrameLayout
+import kotlin.concurrent.thread
+
+/**
+ * Shows the widget inside [container] of [activity], built from the same RemoteViews the launcher
+ * gets. The calendar is read off the main thread; the preview appears once it has been read.
+ */
+class WidgetPreview(private val activity: Activity, private val container: FrameLayout) {
+    private val context = activity.applicationContext
+    private var snapshot: Snapshot? = null
+    private var loaded = false
+
+    /** Changing the settings redraws the preview with them. */
+    var settings = WidgetSettings()
+        set(value) {
+            field = value
+            render()
+        }
+
+    /** Reads the calendar again and redraws. [alsoInBackground] runs on the same background thread. */
+    fun reload(alsoInBackground: () -> Unit = {}) {
+        thread {
+            val read = WidgetUpdater.loadSnapshot(context)
+            alsoInBackground()
+            activity.runOnUiThread {
+                if (activity.isDestroyed) return@runOnUiThread
+                snapshot = read
+                loaded = true
+                render()
+            }
+        }
+    }
+
+    private fun render() {
+        if (!loaded) return
+        val heightDp = container.layoutParams.height / activity.resources.displayMetrics.density
+        container.removeAllViews()
+        container.addView(WidgetUpdater.views(context, snapshot, heightDp, settings).apply(activity, container))
+    }
+}
