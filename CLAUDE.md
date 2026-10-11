@@ -54,7 +54,14 @@ Regole sulla visualizzazione (in `Timeline.kt`):
 - Eventi tutto il giorno ed eventi con orario lunghi **24 ore o più** vanno nella riga in alto (banner) di ogni giorno che toccano, come fa Google Calendar. Gli altri vengono tagliati sui giorni che attraversano.
 - Gli eventi tutto il giorno sono salvati a mezzanotte **UTC**: le loro date si leggono in UTC, non nel fuso locale.
 - La fascia oraria va dall'inizio del primo evento con orario alla fine dell'ultimo, su tutti e tre i giorni, allargata ad almeno 6 ore. Senza eventi: 8–20.
-- Gli eventi sovrapposti si dividono la larghezza del giorno in colonne.
+- Gli eventi sovrapposti si dividono la larghezza del giorno in colonne, in base agli **orari reali**: due eventi che non si sovrappongono non stanno mai affiancati (un evento senza durata conta 1 minuto).
+
+Regole sulla lunghezza degli eventi (in `WidgetLayout.kt`):
+
+- Ogni riquadro corrisponde all'inizio e alla fine reali dell'evento. **Non allungare gli eventi per far stare il titolo**: sembrerebbero sovrapposti a quelli vicini o più lunghi del vero.
+- Solo gli eventi più sottili di una barretta visibile (3 dp) si allungano, e solo nel tempo libero: prima dopo l'evento, poi prima, mai sopra un altro evento nella stessa colonna.
+- È il titolo ad adattarsi al riquadro: testo normale se ci sta (`event_box.xml`), altrimenti una riga in autosize da 8 a 11sp, calcolata sull'altezza vera nel launcher (`event_box_compact.xml`). Nei riquadri più bassi niente titolo. Sotto 8sp il testo diventerebbe illeggibile per i titoli lunghi, perché l'autosize riduce il testo anche per farlo stare in larghezza.
+- I riquadri "tutto il giorno" e quelli con orario condividono separatore e margini (`dimens.xml`): ogni giorno della riga "tutto il giorno" è una `banner_cell` identica, così i bordi coincidono con la griglia.
 
 `CalendarSource` scarta i calendari nascosti, gli eventi cancellati e gli inviti rifiutati.
 
