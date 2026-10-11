@@ -86,19 +86,14 @@ fun layoutWidget(snapshot: Snapshot, size: WidgetSize, fontScale: Float, locale:
     val bannerRows = (0 until rowCount).map { row -> days.map { bannerCell(it, row, rowCount) } }
 
     val range = hourRange(days)
-    val rangeStart = range.start * 60
-    val rangeEnd = range.end * 60
     val gridHeightDp = (size.heightDp - CHROME_HEIGHT_DP - rowCount * BANNER_ROW_HEIGHT_DP).coerceAtLeast(1f)
-    val dpPerMinute = gridHeightDp / (rangeEnd - rangeStart)
+    val dpPerMinute = gridHeightDp / (range.hours * 60)
+    val grid = Grid(range.start * 60, range.end * 60, dpPerMinute, ceil(MIN_BAR_DP / dpPerMinute).toInt().coerceAtLeast(1))
 
     val labelStep = LABEL_STEPS.firstOrNull { it * 60 * dpPerMinute >= LABEL_SPACING_SP * fontScale } ?: 24
     val hourLabels = (range.start until range.end).map { hour ->
         if ((hour - range.start) % labelStep == 0) hour.toString() else ""
     }
-
-    val lineHeightDp = LINE_HEIGHT_SP * fontScale
-    val minBar = ceil(MIN_BAR_DP / dpPerMinute).toInt().coerceAtLeast(1)
-    fun fraction(minute: Int) = (minute - rangeStart).toFloat() / (rangeEnd - rangeStart)
 
     val nowMillis = snapshot.now.toInstant().toEpochMilli()
     val nowMinute = snapshot.now.hour * 60 + snapshot.now.minute
@@ -106,34 +101,45 @@ fun layoutWidget(snapshot: Snapshot, size: WidgetSize, fontScale: Float, locale:
         // Columns follow the real times, so that events that do not overlap never sit side by side.
         // Events without duration count as one minute.
         val placed = placeSegments(day.timed, minDuration = 1)
-        val events = placed.map { box ->
-            val segment = box.segment
-            val (start, end) = visibleSpan(box, placed, minBar, rangeStart, rangeEnd)
-            val boxHeightDp = (end - start) * dpPerMinute
-            val textWidthDp = columnWidthDp * (box.right - box.left) - EVENT_HORIZONTAL_SPACE_DP
-            EventBox(
-                event = segment.event,
-                top = fraction(start),
-                bottom = fraction(end),
-                left = box.left,
-                right = box.right,
-                title = when {
-                    boxHeightDp >= lineHeightDp + EVENT_PADDING_DP -> TitleSize.NORMAL
-                    boxHeightDp >= MIN_TITLE_SP * fontScale -> TitleSize.COMPACT
-                    else -> TitleSize.NONE
-                },
-                maxLines = if (fitsWordByWord(segment.event.title, textWidthDp, fontScale)) {
-                    ((boxHeightDp - EVENT_PADDING_DP) / lineHeightDp).toInt().coerceAtLeast(1)
-                } else {
-                    1
-                },
-                past = segment.event.end <= nowMillis,
-            )
-        }
-        val nowLine = if (day.date == today && nowMinute in rangeStart..rangeEnd) fraction(nowMinute) else null
+        val events = placed.map { eventBox(it, placed, grid, columnWidthDp, fontScale, nowMillis) }
+        val nowLine = if (day.date == today && nowMinute in grid.start..grid.end) grid.fraction(nowMinute) else null
         DayColumn(events, nowLine)
     }
     return WidgetLayout(headers, bannerRows, hourLabels, columns)
+}
+
+/**
+ * The hour grid: the minutes from [start] to [end] drawn at [dpPerMinute]. Events shorter than
+ * [minBar] minutes are drawn as a bar that long, so that they stay visible.
+ */
+private class Grid(val start: Int, val end: Int, val dpPerMinute: Float, val minBar: Int) {
+    fun fraction(minute: Int) = (minute - start).toFloat() / (end - start)
+}
+
+/** Places [box] in its day column and decides how its title fits. */
+private fun eventBox(
+    box: PlacedSegment,
+    placed: List<PlacedSegment>,
+    grid: Grid,
+    columnWidthDp: Float,
+    fontScale: Float,
+    nowMillis: Long,
+): EventBox {
+    val event = box.segment.event
+    val (start, end) = visibleSpan(box, placed, grid)
+    val heightDp = (end - start) * grid.dpPerMinute
+    val textWidthDp = columnWidthDp * (box.right - box.left) - EVENT_HORIZONTAL_SPACE_DP
+    val lines = ((heightDp - EVENT_PADDING_DP) / (LINE_HEIGHT_SP * fontScale)).toInt().coerceAtLeast(1)
+    return EventBox(
+        event = event,
+        top = grid.fraction(start),
+        bottom = grid.fraction(end),
+        left = box.left,
+        right = box.right,
+        title = titleSize(heightDp, fontScale),
+        maxLines = if (fitsWordByWord(event.title, textWidthDp, fontScale)) lines else 1,
+        past = event.end <= nowMillis,
+    )
 }
 
 private val PlacedSegment.left get() = column.toFloat() / columns
@@ -141,29 +147,36 @@ private val PlacedSegment.right get() = (column + 1f) / columns
 
 /**
  * The minutes [box] covers on the grid: its real start and end, except that an event shorter than
- * [minBar] grows to a visible bar. It grows only into free time, first after the event and then
- * before it, never over another event in the same horizontal space: overlapping boxes would suggest
- * overlapping times.
+ * the grid's minimum bar grows to a visible bar. It grows only into free time, first after the event
+ * and then before it, never over another event in the same horizontal space: overlapping boxes would
+ * suggest overlapping times.
  */
-private fun visibleSpan(box: PlacedSegment, all: List<PlacedSegment>, minBar: Int, rangeStart: Int, rangeEnd: Int): Pair<Int, Int> {
+private fun visibleSpan(box: PlacedSegment, all: List<PlacedSegment>, grid: Grid): Pair<Int, Int> {
     val segment = box.segment
     val neighbors = all.filter { it !== box && it.left < box.right && it.right > box.left }
-    val nextStart = neighbors.map { it.segment.startMinute }.filter { it >= segment.startMinute }.minOrNull() ?: rangeEnd
-    val previousEnd = neighbors.map { it.segment.endMinute }.filter { it <= segment.startMinute }.maxOrNull() ?: rangeStart
-    val end = maxOf(segment.endMinute, minOf(segment.startMinute + minBar, nextStart, rangeEnd))
-    val start = minOf(segment.startMinute, maxOf(end - minBar, previousEnd, rangeStart))
+    val nextStart = neighbors.map { it.segment.startMinute }.filter { it >= segment.startMinute }.minOrNull() ?: grid.end
+    val previousEnd = neighbors.map { it.segment.endMinute }.filter { it <= segment.startMinute }.maxOrNull() ?: grid.start
+    val end = maxOf(segment.endMinute, minOf(segment.startMinute + grid.minBar, nextStart, grid.end))
+    val start = minOf(segment.startMinute, maxOf(end - grid.minBar, previousEnd, grid.start))
     return start to end
+}
+
+/** A regular title when a line fits, else one autosized line, else none. */
+private fun titleSize(heightDp: Float, fontScale: Float) = when {
+    heightDp >= LINE_HEIGHT_SP * fontScale + EVENT_PADDING_DP -> TitleSize.NORMAL
+    heightDp >= MIN_TITLE_SP * fontScale -> TitleSize.COMPACT
+    else -> TitleSize.NONE
 }
 
 /**
  * "Lun 12" when it fits [widthDp], else "L 12" (one-letter weekday, unambiguous next to the date),
  * else just "12".
  */
-private fun dayLabel(date: LocalDate, widthDp: Float, fontScale: Float, locale: Locale): String =
-    listOf("EEE d", "EEEEE d", "d")
+private fun dayLabel(date: LocalDate, widthDp: Float, fontScale: Float, locale: Locale): String {
+    val labels = listOf("EEE d", "EEEEE d", "d")
         .map { DateTimeFormatter.ofPattern(it, locale).format(date).replaceFirstChar { c -> c.titlecase(locale) } }
-        .firstOrNull { estimatedWidthDp(it, HEADER_TEXT_SP * fontScale) <= widthDp }
-        ?: date.dayOfMonth.toString()
+    return labels.firstOrNull { estimatedWidthDp(it, HEADER_TEXT_SP * fontScale) <= widthDp } ?: labels.last()
+}
 
 /**
  * Whether [title] can wrap on more lines without breaking a word: Android cuts words longer than
