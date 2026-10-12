@@ -86,4 +86,39 @@ class WidgetSettingsTest {
     fun moreThanSevenDaysAreRejected() {
         WidgetSettings(dayCount = 8)
     }
+
+    @Test
+    fun byDefaultEveryCalendarIsShownIncludingNewOnes() {
+        assertTrue(WidgetSettings().shows(2))
+        assertTrue(WidgetSettings().shows(12345))
+    }
+
+    @Test
+    fun aSelectionShowsOnlyItsCalendars() {
+        val settings = WidgetSettings(calendarIds = setOf(2, 6))
+
+        assertTrue(settings.shows(2))
+        assertTrue(settings.shows(6))
+        assertFalse(settings.shows(5))
+    }
+
+    @Test
+    fun checkingEveryCalendarMeansAllCalendars() {
+        assertEquals(null, WidgetSettings.calendarSelection(setOf(2, 5, 6), listOf(2, 5, 6)))
+        // Calendars that no longer exist do not count.
+        assertEquals(null, WidgetSettings.calendarSelection(setOf(2, 5, 6, 99), listOf(2, 5, 6)))
+    }
+
+    @Test
+    fun checkingSomeCalendarsKeepsThem() {
+        assertEquals(setOf(2L, 6L), WidgetSettings.calendarSelection(setOf(2, 6), listOf(2, 5, 6)))
+    }
+
+    @Test
+    fun checkingNoCalendarShowsNothing() {
+        val selection = WidgetSettings.calendarSelection(emptySet(), listOf(2, 5, 6))
+
+        assertEquals(emptySet<Long>(), selection)
+        assertFalse(WidgetSettings(calendarIds = selection).shows(2))
+    }
 }

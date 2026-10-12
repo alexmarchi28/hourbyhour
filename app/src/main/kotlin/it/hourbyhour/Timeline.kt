@@ -15,7 +15,12 @@ data class CalendarEvent(
     val end: Long,
     val allDay: Boolean,
     val color: Int,
+    /** The calendar the event belongs to, as in the calendar provider. */
+    val calendarId: Long = 0,
 )
+
+/** A calendar of the phone whose events are synced, as offered in the widget settings. */
+data class CalendarInfo(val id: Long, val name: String, val color: Int)
 
 /** The part of a timed event that falls on one day, in minutes from midnight (0..1440). */
 data class Segment(val event: CalendarEvent, val startMinute: Int, val endMinute: Int)
@@ -33,7 +38,8 @@ data class Snapshot(val days: List<Day>, val now: ZonedDateTime)
 data class Agenda(val events: List<CalendarEvent>, val now: ZonedDateTime) {
     fun snapshot(settings: WidgetSettings): Snapshot {
         val firstDay = settings.firstDay(now.toLocalDate())
-        return Snapshot(splitIntoDays(events, firstDay, settings.dayCount, now.zone), now)
+        val shown = events.filter { settings.shows(it.calendarId) }
+        return Snapshot(splitIntoDays(shown, firstDay, settings.dayCount, now.zone), now)
     }
 
     companion object {

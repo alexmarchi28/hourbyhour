@@ -5,6 +5,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.CalendarContract.Attendees
+import android.provider.CalendarContract.Calendars
 import android.provider.CalendarContract.Events
 import android.provider.CalendarContract.Instances
 
@@ -19,12 +20,15 @@ object CalendarSource {
         Instances.END,
         Instances.ALL_DAY,
         Instances.DISPLAY_COLOR,
+        Instances.CALENDAR_ID,
     )
 
-    // Same filters as Google Calendar: calendars hidden by the user, cancelled events and
-    // invitations the user declined are not shown. Status columns can be NULL.
+    // Only calendars whose events are synced to the phone. Which of them to show is a setting of
+    // each widget: the provider's "visible" flag is ignored, because it does not follow the
+    // calendars checked in Google Calendar. Like Google Calendar, cancelled events and invitations
+    // the user declined are not shown. Status columns can be NULL.
     private val SELECTION = """
-        ${Instances.VISIBLE} = 1
+        ${Instances.SYNC_EVENTS} = 1
         AND (${Instances.STATUS} IS NULL OR ${Instances.STATUS} != ${Events.STATUS_CANCELED})
         AND (${Instances.SELF_ATTENDEE_STATUS} IS NULL
              OR ${Instances.SELF_ATTENDEE_STATUS} != ${Attendees.ATTENDEE_STATUS_DECLINED})
@@ -50,9 +54,27 @@ object CalendarSource {
                     allDay = cursor.getInt(3) == 1,
                     // Provider colors may lack the alpha channel.
                     color = cursor.getInt(4) or 0xFF000000.toInt(),
+                    calendarId = cursor.getLong(5),
                 )
             }
         }
         return events
+    }
+
+    /** The calendars whose events are synced to the phone, the primary one first. Requires [hasPermission]. */
+    fun loadCalendars(context: Context): List<CalendarInfo> {
+        val projection = arrayOf(Calendars._ID, Calendars.CALENDAR_DISPLAY_NAME, Calendars.CALENDAR_COLOR)
+        val order = "${Calendars.IS_PRIMARY} DESC, ${Calendars.CALENDAR_DISPLAY_NAME} COLLATE LOCALIZED ASC"
+        val calendars = mutableListOf<CalendarInfo>()
+        context.contentResolver.query(Calendars.CONTENT_URI, projection, "${Calendars.SYNC_EVENTS} = 1", null, order)?.use { cursor ->
+            while (cursor.moveToNext()) {
+                calendars += CalendarInfo(
+                    id = cursor.getLong(0),
+                    name = cursor.getString(1) ?: "",
+                    color = cursor.getInt(2) or 0xFF000000.toInt(),
+                )
+            }
+        }
+        return calendars
     }
 }

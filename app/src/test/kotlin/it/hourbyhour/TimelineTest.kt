@@ -238,4 +238,20 @@ class TimelineTest {
         assertEquals((19..23).map { LocalDate.of(2026, 10, it) }, snapshot.days.map { it.date })
         assertEquals(1, snapshot.days[0].timed.size)
     }
+
+    @Test
+    fun agendaSnapshotShowsOnlyTheSelectedCalendars() {
+        val now = LocalDateTime.of(2026, 10, 12, 8, 0).atZone(zone)
+        val work = timed("Riunione", at(12, 9), at(12, 10)).copy(calendarId = 7)
+        val sport = timed("Arrampicata", at(12, 19), at(12, 21)).copy(calendarId = 6)
+        val holiday = allDay("Ferie", 12, 12).copy(calendarId = 7)
+        val agenda = Agenda(listOf(work, sport, holiday), now)
+
+        val workOnly = agenda.snapshot(WidgetSettings(calendarIds = setOf(7))).days[0]
+        val everything = agenda.snapshot(WidgetSettings()).days[0]
+
+        assertEquals(listOf("Riunione"), workOnly.timed.map { it.event.title })
+        assertEquals(listOf("Ferie"), workOnly.allDay.map { it.title })
+        assertEquals(setOf("Riunione", "Arrampicata"), everything.timed.map { it.event.title }.toSet())
+    }
 }

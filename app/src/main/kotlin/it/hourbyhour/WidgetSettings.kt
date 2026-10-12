@@ -13,6 +13,8 @@ data class WidgetSettings(
     val dayCount: Int = DEFAULT_DAY_COUNT,
     /** Start from Monday instead of today. Applies from [MIN_DAYS_FROM_MONDAY] days up, see [startsOnMonday]. */
     val startOnMonday: Boolean = false,
+    /** The calendars to show, by provider id; null shows them all, including calendars added later. */
+    val calendarIds: Set<Long>? = null,
 ) {
     init {
         require(transparency in 0..100) { "Transparency must be between 0 and 100, not $transparency" }
@@ -21,6 +23,9 @@ data class WidgetSettings(
 
     /** Alpha of the widget background, from 255 (opaque) to 0 (invisible). */
     val backgroundAlpha: Int get() = (255 * (100 - transparency) / 100f).roundToInt()
+
+    /** Whether the widget shows the events of the calendar with [calendarId]. */
+    fun shows(calendarId: Long): Boolean = calendarIds == null || calendarId in calendarIds
 
     /** Whether the widget shows a week from Monday: with fewer days it always starts today. */
     val startsOnMonday: Boolean get() = startOnMonday && dayCount >= MIN_DAYS_FROM_MONDAY
@@ -49,6 +54,13 @@ data class WidgetSettings(
 
         /** The fewest days that can start from Monday: Monday to Friday. */
         const val MIN_DAYS_FROM_MONDAY = 5
+
+        /**
+         * The [calendarIds] for the calendars [checked] among [available]: checking them all means
+         * "all calendars", so calendars added later show up too.
+         */
+        fun calendarSelection(checked: Set<Long>, available: Collection<Long>): Set<Long>? =
+            if (checked.containsAll(available)) null else checked
     }
 }
 

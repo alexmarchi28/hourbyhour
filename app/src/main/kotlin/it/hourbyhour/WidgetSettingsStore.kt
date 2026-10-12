@@ -11,6 +11,8 @@ class WidgetSettingsStore(context: Context) {
         dayCount = preferences.getInt(dayCountKey(widgetId), WidgetSettings.DEFAULT_DAY_COUNT)
             .coerceIn(1, WidgetSettings.MAX_DAY_COUNT),
         startOnMonday = preferences.getBoolean(startOnMondayKey(widgetId), false),
+        // No saved set means all calendars. The set from preferences must not be modified: copy it.
+        calendarIds = preferences.getStringSet(calendarsKey(widgetId), null)?.mapNotNull { it.toLongOrNull() }?.toSet(),
     )
 
     fun save(widgetId: Int, settings: WidgetSettings) {
@@ -18,6 +20,10 @@ class WidgetSettingsStore(context: Context) {
             .putInt(transparencyKey(widgetId), settings.transparency)
             .putInt(dayCountKey(widgetId), settings.dayCount)
             .putBoolean(startOnMondayKey(widgetId), settings.startOnMonday)
+            .apply {
+                val ids = settings.calendarIds
+                if (ids == null) remove(calendarsKey(widgetId)) else putStringSet(calendarsKey(widgetId), ids.map { it.toString() }.toSet())
+            }
             .apply()
     }
 
@@ -25,7 +31,7 @@ class WidgetSettingsStore(context: Context) {
     fun delete(widgetIds: IntArray) {
         val editor = preferences.edit()
         for (id in widgetIds) {
-            editor.remove(transparencyKey(id)).remove(dayCountKey(id)).remove(startOnMondayKey(id))
+            editor.remove(transparencyKey(id)).remove(dayCountKey(id)).remove(startOnMondayKey(id)).remove(calendarsKey(id))
         }
         editor.apply()
     }
@@ -33,4 +39,5 @@ class WidgetSettingsStore(context: Context) {
     private fun transparencyKey(widgetId: Int) = "transparency_$widgetId"
     private fun dayCountKey(widgetId: Int) = "days_$widgetId"
     private fun startOnMondayKey(widgetId: Int) = "from_monday_$widgetId"
+    private fun calendarsKey(widgetId: Int) = "calendars_$widgetId"
 }
