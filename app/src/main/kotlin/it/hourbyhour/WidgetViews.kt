@@ -107,8 +107,9 @@ class WidgetViews(private val context: Context, private val settings: WidgetSett
         intents?.let { setOnClickPendingIntent(viewId, it.pendingIntent(target)) }
     }
 
+    /** The line sits on the top edge of a view that spans from the current time down, like an event. */
     private fun nowLine(top: Float) = RemoteViews(packageName, R.layout.now_line).apply {
-        setFloat(R.id.now_position, "setWeightSum", 1f / (1f - top.coerceAtMost(MAX_FRACTION)))
+        setFloat(R.id.now_position, "setWeightSum", spanWeightSums(top, 1f).first)
     }
 
     /**
@@ -136,15 +137,11 @@ class WidgetViews(private val context: Context, private val settings: WidgetSett
         setColorInt(viewId, "setTextColor", colors.lightText, colors.darkText)
     }
 
-    /**
-     * Makes the content of [outer] span the fraction [from, to] of it: [outer] keeps its single child
-     * on the far side and gives it 1 - from, then [inner] gives its child the share for [from, to].
-     */
+    /** Makes the content of [outer] span the fraction [from, to] of it, see [spanWeightSums]. */
     private fun RemoteViews.setWeightSums(outer: Int, inner: Int, from: Float, to: Float) {
-        val start = from.coerceIn(0f, MAX_FRACTION)
-        val end = to.coerceIn(start + MIN_FRACTION, 1f)
-        setFloat(outer, "setWeightSum", 1f / (1f - start))
-        setFloat(inner, "setWeightSum", (1f - start) / (end - start))
+        val (outerSum, innerSum) = spanWeightSums(from, to)
+        setFloat(outer, "setWeightSum", outerSum)
+        setFloat(inner, "setWeightSum", innerSum)
     }
 
     /** A color resource as it is in the light or dark theme, whatever the current theme is. */
@@ -155,9 +152,19 @@ class WidgetViews(private val context: Context, private val settings: WidgetSett
         }
         return context.createConfigurationContext(configuration).getColor(id)
     }
-
-    private companion object {
-        const val MAX_FRACTION = 0.999f
-        const val MIN_FRACTION = 0.001f
-    }
 }
+
+/**
+ * The weight sums of two nested layouts that make their content span the fraction [from, to] (see
+ * event.xml): the outer one keeps its single child on the far side and gives it 1 - from, then the
+ * inner one gives its child the share for [from, to]. The span is kept inside the layout and never
+ * empty, so that the sums stay finite.
+ */
+fun spanWeightSums(from: Float, to: Float): Pair<Float, Float> {
+    val start = from.coerceIn(0f, MAX_FRACTION)
+    val end = to.coerceIn(start + MIN_FRACTION, 1f)
+    return 1f / (1f - start) to (1f - start) / (end - start)
+}
+
+private const val MAX_FRACTION = 0.999f
+private const val MIN_FRACTION = 0.001f
