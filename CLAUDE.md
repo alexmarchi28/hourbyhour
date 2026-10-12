@@ -8,9 +8,16 @@ Gli eventi si leggono da `CalendarContract`, il calendario del telefono che Goog
 
 ```bash
 ./gradlew assembleDebug        # build
-./gradlew testDebugUnitTest    # test (devono passare prima di ogni commit)
+./gradlew testDebugUnitTest    # test sulla JVM (devono passare prima di ogni commit)
+./gradlew connectedDebugAndroidTest   # test sul telefono collegato (vedi "Test")
 ./gradlew lintDebug            # lint: nessun errore ammesso
 ./gradlew installDebug         # installa sul telefono collegato via adb
+
+# Copertura dei test JVM: app/build/reports/coverage/test/debug/index.html
+./gradlew createDebugUnitTestCoverageReport
+# Copertura dei test sul telefono: app/build/reports/coverage/androidTest/debug/connected/index.html
+# -Pcoverage mette JaCoCo nell'APK di debug: dopo, reinstalla quello normale con installDebug.
+./gradlew -Pcoverage createDebugAndroidTestCoverageReport installDebug
 
 # Forza l'aggiornamento del widget sul telefono
 adb shell am broadcast -n it.hourbyhour/.HourByHourWidget -a it.hourbyhour.action.REFRESH
@@ -24,7 +31,7 @@ L'SDK è in `~/Android/Sdk` (`local.properties`, non versionato). `gradle.proper
 
 - Kotlin integrato in AGP 9.4.1 (niente plugin `org.jetbrains.kotlin.android`), Gradle 9.8.1, JDK 21
 - `minSdk 31` (Android 12), `compileSdk`/`targetSdk 36`. Il telefono di sviluppo è un Motorola Edge 60 con Android 16.
-- **Nessuna dipendenza a runtime**: solo API della piattaforma (niente AndroidX, Compose, Glance, WorkManager). JUnit 4 solo per i test.
+- **Nessuna dipendenza a runtime**: solo API della piattaforma (niente AndroidX, Compose, Glance, WorkManager). Solo per i test: JUnit 4 e androidx.test (`runner` e `core`), che non finiscono nell'APK dell'app.
 
 Prima di aggiungere una dipendenza, chiedi.
 
@@ -120,7 +127,7 @@ Aggiornamenti: alla aggiunta e al ridimensionamento del widget, quando cambia il
 
 ## Verifica sul telefono
 
-I test JVM coprono la logica pura (vedi "Test"), non le RemoteViews. Ogni modifica al widget va provata sul telefono: installa, forza l'aggiornamento e guarda il risultato (`adb exec-out screencap -p > shot.png`). Prova anche dimensioni diverse (ridimensionando il widget) e il tema chiaro (`adb shell cmd uimode night no`, poi ripristina con `yes`). L'anteprima nell'app usa le stesse `RemoteViews`, ma non sostituisce la prova sul launcher.
+I test automatici (vedi "Test") non vedono il launcher vero né l'aspetto del widget. Ogni modifica al widget va provata anche a mano sul telefono: installa, forza l'aggiornamento e guarda il risultato (`adb exec-out screencap -p > shot.png`). Prova anche dimensioni diverse (ridimensionando il widget) e il tema chiaro (`adb shell cmd uimode night no`, poi ripristina con `yes`). L'anteprima nell'app usa le stesse `RemoteViews`, ma non sostituisce la prova sul launcher.
 
 Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (stesso tema) e leggi il colore di un pixel al centro di un evento, lontano dal testo.
 
@@ -132,7 +139,13 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 - I test girano sulla JVM, dove le classi Android esistono solo come stub che lanciano eccezioni. Per testare codice che tocca Android:
   - le decisioni stanno in funzioni senza tipi Android, anche dentro i file Android: `nextRefreshTime` ed `estimatedSize` (`WidgetUpdater.kt`), `calendarUri` (`CalendarIntents.kt`), `spanWeightSums` (`WidgetViews.kt`);
   - le interfacce Android si sostituiscono con finti in memoria: `FakeSharedPreferences` per `WidgetSettingsStore`, `fakeCursor` per le righe lette da `CalendarSource` (ha solo le colonne della query, come il provider).
-- Non sono coperti da test automatici, e vanno provati sul telefono: le RemoteViews (`WidgetViews`), le query sul provider (filtri `SELECTION`), le activity, l'anteprima, gli aggiornamenti (`HourByHourWidget`, `CalendarChangeJob`, sveglia).
+- Il resto si prova sul telefono, con i test in `app/src/androidTest` (girano nel processo dell'app):
+  - `WidgetViewsDeviceTest`: le RemoteViews applicate, misurate e disposte come in un launcher (posizioni, titoli, intestazioni, tocchi). I tocchi mandano broadcast di prova invece di aprire il calendario.
+  - `CalendarSourceDeviceTest`: le query sul provider (`SELECTION`, ordine, finestra) su calendari locali che il test crea e cancella. Il permesso di scrittura lo prende in prestito dalla shell adb (`adoptShellPermissionIdentity`): l'app resta con il solo `READ_CALENDAR`.
+  - `WidgetDeviceTest` e `WidgetSettingsActivityDeviceTest`: il test ospita un proprio widget (`TestWidget`), fuori dalla Home, e lo aggiorna, ridimensiona, configura e rimuove. Non toccano i widget veri né le loro impostazioni.
+  - `CalendarIntentsDeviceTest` (Google Calendar accetta gli intent dei tocchi) e `MainActivityDeviceTest`.
+- `gradle.properties` contiene `android.injected.androidTest.leaveApksInstalledAfterRun=true`: senza, AGP disinstalla l'app dopo i test sul telefono, e i widget spariscono dalla Home. Non toglierlo.
+- Restano da provare a mano: il launcher vero (dimensioni riportate, viste riapplicate), l'aspetto (colori confrontati con Google Calendar, tema chiaro), i tempi della sveglia e del job sul calendario.
 
 ## Convenzioni
 
