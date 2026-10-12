@@ -3,6 +3,7 @@ package it.hourbyhour
 import android.Manifest
 import android.app.Activity
 import android.appwidget.AppWidgetManager
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -13,7 +14,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 
-/** Asks for calendar access, offers to add the widget and shows a preview of it. */
+/** Asks for calendar access, offers to add the widget, shows a preview of it and links the privacy policy. */
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var grantButton: Button
@@ -39,6 +40,13 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.add_widget).apply {
             visibility = if (widgets.isRequestPinAppWidgetSupported) View.VISIBLE else View.GONE
             setOnClickListener { widgets.requestPinAppWidget(ComponentName(context, HourByHourWidget::class.java), null, null) }
+        }
+        findViewById<Button>(R.id.privacy_policy).setOnClickListener {
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
+            } catch (e: ActivityNotFoundException) {
+                // No browser on the phone: nothing can show the page.
+            }
         }
     }
 
@@ -67,5 +75,8 @@ class MainActivity : Activity() {
 
     private companion object {
         const val REQUEST_CALENDAR = 1
+
+        /** Published from the public repository alexmarchi28/hourbyhour-privacy with GitHub Pages. */
+        const val PRIVACY_POLICY_URL = "https://alexmarchi28.github.io/hourbyhour-privacy/"
     }
 }

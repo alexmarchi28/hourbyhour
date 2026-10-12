@@ -13,6 +13,7 @@
     <string name="open_settings">Open app settings</string>
     <string name="add_widget">Add the widget to the home screen</string>
     <string name="preview">Preview</string>
+    <string name="privacy_policy">Privacy policy</string>
 
     <string name="widget_settings_title">Widget settings</string>
     <string name="transparency_label">Background transparency</string>
