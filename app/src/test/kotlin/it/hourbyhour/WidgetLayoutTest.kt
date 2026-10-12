@@ -355,6 +355,36 @@ class WidgetLayoutTest {
         assertEquals(1, events.single { it.event.title == "Arrampicata" }.maxLines)
     }
 
+    @Test
+    fun aDayOpensAtTheFirstHourShown() {
+        // The range is 7-13: tapping Tuesday opens it at 7:00.
+        val result = layout(timed("A", at(12, 9), at(12, 10)))
+
+        assertEquals(ClickTarget.Time(at(13, 7)), result.columns[1].click)
+        assertEquals(ClickTarget.Time(at(13, 7)), result.headers[1].click)
+    }
+
+    @Test
+    fun anEventCrossingMidnightOpensTheWholeEventFromBothDays() {
+        val event = timed("Festa", at(12, 22), at(13, 2)).copy(eventId = 42)
+
+        val columns = layout(event).columns
+
+        val expected = ClickTarget.Event(42, at(12, 22), at(13, 2))
+        assertEquals(expected, columns[0].events.single().event.clickTarget())
+        assertEquals(expected, columns[1].events.single().event.clickTarget())
+    }
+
+    @Test
+    fun occurrencesOfARecurringEventOpenThemselves() {
+        val monday = timed("Meditazione", at(12, 7), at(12, 7, 15)).copy(eventId = 7)
+        val tuesday = timed("Meditazione", at(13, 7), at(13, 7, 15)).copy(eventId = 7)
+
+        val targets = layout(monday, tuesday).columns.take(2).map { it.events.single().event.clickTarget() }
+
+        assertEquals(listOf(ClickTarget.Event(7, at(12, 7), at(12, 7, 15)), ClickTarget.Event(7, at(13, 7), at(13, 7, 15))), targets)
+    }
+
     private companion object {
         /** About a widget 5 cells wide on a phone: columns of 122dp with three days. */
         const val WIDTH_DP = 400f

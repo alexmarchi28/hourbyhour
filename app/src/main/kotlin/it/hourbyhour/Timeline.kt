@@ -17,6 +17,8 @@ data class CalendarEvent(
     val color: Int,
     /** The calendar the event belongs to, as in the calendar provider. */
     val calendarId: Long = 0,
+    /** The event in the calendar provider; occurrences of a recurring event share it. */
+    val eventId: Long = 0,
 )
 
 /** A calendar of the phone whose events are synced, as offered in the widget settings. */

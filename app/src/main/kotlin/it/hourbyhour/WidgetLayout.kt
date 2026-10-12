@@ -20,7 +20,20 @@ data class WidgetLayout(
     val columns: List<DayColumn>,
 )
 
-data class DayHeader(val label: String, val today: Boolean)
+/** A tap on [label] opens the day in the calendar app ([click]). */
+data class DayHeader(val label: String, val today: Boolean, val click: ClickTarget.Time)
+
+/** What a tap opens in the calendar app. */
+sealed interface ClickTarget {
+    /** One occurrence of an event: the occurrences of a recurring event differ by [begin]. */
+    data class Event(val eventId: Long, val begin: Long, val end: Long) : ClickTarget
+
+    /** The calendar at a moment, to show a day. */
+    data class Time(val millis: Long) : ClickTarget
+}
+
+/** A tap on an event opens it, whole: also from the part of an event crossing midnight. */
+fun CalendarEvent.clickTarget() = ClickTarget.Event(eventId, begin, end)
 
 sealed interface BannerCell {
     data class Event(val event: CalendarEvent) : BannerCell
@@ -65,8 +78,11 @@ enum class TitleSize {
  */
 data class WidgetSize(val widthDp: Float, val heightDp: Float)
 
-/** [nowLine] is the position of the current time as a fraction of the height, null when not shown. */
-data class DayColumn(val events: List<EventBox>, val nowLine: Float?)
+/**
+ * [nowLine] is the position of the current time as a fraction of the height, null when not shown.
+ * A tap on the column outside the events, or on its all-day cells, opens the day ([click]).
+ */
+data class DayColumn(val events: List<EventBox>, val nowLine: Float?, val click: ClickTarget.Time)
 
 /**
  * Lays out [snapshot] for a widget of about [size]. The size is only an estimate: it decides how
@@ -78,14 +94,16 @@ fun layoutWidget(snapshot: Snapshot, size: WidgetSize, fontScale: Float, locale:
     require(days.isNotEmpty()) { "The widget needs at least one day" }
     val today = snapshot.now.toLocalDate()
     val columnWidthDp = ((size.widthDp - HORIZONTAL_CHROME_DP) / days.size).coerceAtLeast(1f)
+    val range = hourRange(days)
+    // A day opens at the first hour shown, so a day view in the calendar app scrolls there.
+    fun dayClick(day: Day) = ClickTarget.Time(day.date.atTime(range.start, 0).atZone(snapshot.now.zone).toInstant().toEpochMilli())
     val headers = days.map { day ->
-        DayHeader(dayLabel(day.date, columnWidthDp - HEADER_MARGIN_DP, fontScale, locale), day.date == today)
+        DayHeader(dayLabel(day.date, columnWidthDp - HEADER_MARGIN_DP, fontScale, locale), day.date == today, dayClick(day))
     }
 
     val rowCount = minOf(days.maxOf { it.allDay.size }, MAX_BANNER_ROWS)
     val bannerRows = (0 until rowCount).map { row -> days.map { bannerCell(it, row, rowCount) } }
 
-    val range = hourRange(days)
     val gridHeightDp = (size.heightDp - CHROME_HEIGHT_DP - rowCount * BANNER_ROW_HEIGHT_DP).coerceAtLeast(1f)
     val dpPerMinute = gridHeightDp / (range.hours * 60)
     val grid = Grid(range.start * 60, range.end * 60, dpPerMinute, ceil(MIN_BAR_DP / dpPerMinute).toInt().coerceAtLeast(1))
@@ -103,7 +121,7 @@ fun layoutWidget(snapshot: Snapshot, size: WidgetSize, fontScale: Float, locale:
         val placed = placeSegments(day.timed, minDuration = 1)
         val events = placed.map { eventBox(it, placed, grid, columnWidthDp, fontScale, nowMillis) }
         val nowLine = if (day.date == today && nowMinute in grid.start..grid.end) grid.fraction(nowMinute) else null
-        DayColumn(events, nowLine)
+        DayColumn(events, nowLine, dayClick(day))
     }
     return WidgetLayout(headers, bannerRows, hourLabels, columns)
 }

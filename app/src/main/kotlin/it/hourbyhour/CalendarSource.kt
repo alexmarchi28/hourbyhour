@@ -21,6 +21,7 @@ object CalendarSource {
         Instances.ALL_DAY,
         Instances.DISPLAY_COLOR,
         Instances.CALENDAR_ID,
+        Instances.EVENT_ID,
     )
 
     // Only calendars whose events are synced to the phone. Which of them to show is a setting of
@@ -55,6 +56,7 @@ object CalendarSource {
                     // Provider colors may lack the alpha channel.
                     color = cursor.getInt(4) or 0xFF000000.toInt(),
                     calendarId = cursor.getLong(5),
+                    eventId = cursor.getLong(6),
                 )
             }
         }
