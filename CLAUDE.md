@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-**HourByHour** (prima "Tre Giorni") è un'app Android con un widget per la schermata Home che mostra **da 1 a 7 giorni (da oggi, o la settimana da lunedì), ora per ora**, con gli eventi di Google Calendar nella loro fascia oraria. Il widget è di sola lettura: nessuna azione al tocco.
+**HourByHour** (prima "Tre Giorni") è un'app Android con un widget per la schermata Home che mostra **da 1 a 7 giorni (da oggi, o la settimana da lunedì), ora per ora**, con gli eventi di Google Calendar nella loro fascia oraria. Toccando un evento lo si apre in Google Calendar; toccando un giorno si apre quel giorno.
 
 Gli eventi si leggono da `CalendarContract`, il calendario del telefono che Google Calendar tiene sincronizzato. **Niente login Google e niente Calendar API**: l'app non ha il permesso INTERNET e i dati non escono dal telefono.
 
@@ -44,7 +44,8 @@ WidgetUpdater.kt      carica gli eventi, aggiorna i widget, programma il prossim
 HourByHourWidget.kt   AppWidgetProvider: aggiunta, ridimensionamento, cambi di ora/fuso/lingua
 CalendarChangeJob.kt  JobService con trigger sul content URI del calendario
 MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", anteprima del widget
-WidgetPreview.kt      anteprima del widget nelle schermate dell'app (stesse RemoteViews del launcher)
+WidgetPreview.kt      anteprima del widget nelle schermate dell'app (stesse RemoteViews del launcher, senza click)
+CalendarIntents.kt    intent che aprono l'app calendario su un evento o un giorno
 ```
 
 `Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt` e `WidgetSettings.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni di ogni widget) → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
@@ -81,6 +82,18 @@ Ogni widget ha le sue impostazioni (`WidgetSettings`), salvate per id del widget
 - Un calendario appena creato arriva nel calendario del telefono solo quando Google lo sincronizza (sul telefono di sviluppo una volta al giorno, oppure con "Aggiorna" nel menu di Google Calendar). Prima di allora il widget non può vederlo: la schermata lo spiega sotto la lista.
 - Nuove impostazioni vanno in `WidgetSettings`, in `WidgetSettingsStore` (con la cancellazione in `delete`) e in questa schermata.
 - `MainActivity` mostra l'anteprima (`WidgetPreview`) con le impostazioni predefinite.
+
+## Tocchi sul widget
+
+Cosa apre ogni tocco lo decide `layoutWidget` (`ClickTarget`, testato); `CalendarIntents` lo traduce in intent e `WidgetViews` li collega.
+
+- **Eventi** (con orario e "tutto il giorno"): aprono l'evento intero, anche dalla parte dopo mezzanotte. Per gli eventi ricorrenti si apre l'occorrenza toccata (`EXTRA_EVENT_BEGIN_TIME`/`END_TIME`).
+- **Intestazione, cella "tutto il giorno" (vuota o "+N") e parte vuota della colonna:** aprono il giorno (`content://com.android.calendar/time/<millis>`) alla prima ora mostrata. Google Calendar resta nella vista che l'utente usava: in "Mese" mostra il mese, in "Giorno"/"3 giorni" il giorno.
+- Si apre **Google Calendar** se installato (dichiarato in `<queries>` nel manifest), altrimenti l'app calendario predefinita: sul telefono di sviluppo c'è anche Outlook.
+- Ogni `PendingIntent` ha un proprio `identifier`: Android distingue i pending intent per indirizzo e non per extra, e le occorrenze di un evento ricorrente hanno lo stesso indirizzo.
+- I riquadri degli eventi stanno sopra la colonna dentro livelli trasparenti grandi quanto la colonna: quei livelli non sono cliccabili, quindi il tocco arriva al riquadro sotto il dito o, nel vuoto, alla colonna. Verificato sul launcher Motorola, anche con eventi affiancati.
+- Le anteprime nell'app (`WidgetPreview`) non hanno click, così toccarle non fa uscire dalla schermata.
+- Per provarli: `adb shell uiautomator dump` dà la posizione di ogni riquadro (`it.hourbyhour:id/event_box`, `day_header`, `banner_more`…), poi `adb shell input tap x y` e controlla cosa si apre.
 
 ## Colori degli eventi
 
@@ -131,4 +144,4 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 
 ## Fuori scope per ora (non implementare senza richiesta esplicita)
 
-Eventi cliccabili o qualunque azione al tocco, Material You e colori dinamici, altre impostazioni del widget (ad esempio la fascia oraria fissa), ombre o colore del testo adattati allo sfondo, login Google e Calendar API.
+Altre azioni al tocco (ad esempio creare un evento), Material You e colori dinamici, altre impostazioni del widget (ad esempio la fascia oraria fissa), ombre o colore del testo adattati allo sfondo, login Google e Calendar API.

@@ -7,7 +7,7 @@ import android.content.Intent
 import android.os.Bundle
 import kotlin.concurrent.thread
 
-/** The home screen widget. It only displays events: it has no click actions. */
+/** The home screen widget. Taps open events and days in the calendar app (see CalendarIntents). */
 class HourByHourWidget : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
