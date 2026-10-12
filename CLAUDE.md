@@ -35,10 +35,10 @@ Timeline.kt           logica pura, testata su JVM: Agenda (eventi letti), eventi
 GoogleColors.kt       logica pura, testata su JVM: colori del provider → colori mostrati da Google Calendar
 WidgetLayout.kt       logica pura, testata su JVM: cosa mostra il widget e dove (frazioni delle colonne)
 EventColors.kt        logica pura, testata su JVM: colori di riempimento e testo degli eventi, per tema
-WidgetSettings.kt     logica pura, testata su JVM: impostazioni di un widget (trasparenza, numero di giorni, partenza da lunedì)
+WidgetSettings.kt     logica pura, testata su JVM: impostazioni di un widget (trasparenza, numero di giorni, partenza da lunedì, calendari)
 WidgetSettingsStore.kt  salva le impostazioni per id del widget (SharedPreferences), cancellate in onDeleted
 WidgetSettingsActivity.kt  schermata impostazioni di un widget, aperta dal launcher, con anteprima sopra lo sfondo della Home
-CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse)
+CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse) e sull'elenco dei calendari
 WidgetViews.kt        traduce un WidgetLayout in RemoteViews, senza prendere decisioni
 WidgetUpdater.kt      carica gli eventi, aggiorna i widget, programma il prossimo aggiornamento
 HourByHourWidget.kt   AppWidgetProvider: aggiunta, ridimensionamento, cambi di ora/fuso/lingua
@@ -67,7 +67,7 @@ Regole sulla lunghezza degli eventi (in `WidgetLayout.kt`):
 - È il titolo ad adattarsi al riquadro: testo normale se ci sta (`event_box.xml`), altrimenti una riga in autosize da 8 a 11sp, calcolata sull'altezza vera nel launcher (`event_box_compact.xml`). Nei riquadri più bassi niente titolo. Sotto 8sp il testo diventerebbe illeggibile per i titoli lunghi, perché l'autosize riduce il testo anche per farlo stare in larghezza.
 - I riquadri "tutto il giorno" e quelli con orario condividono separatore e margini (`dimens.xml`): ogni giorno della riga "tutto il giorno" è una `banner_cell` identica, così i bordi coincidono con la griglia.
 
-`CalendarSource` scarta i calendari nascosti, gli eventi cancellati e gli inviti rifiutati.
+`CalendarSource` legge solo i calendari con gli eventi sincronizzati sul telefono (`sync_events = 1`) e scarta gli eventi cancellati e gli inviti rifiutati. Il flag "visibile" del provider **non si usa**: non segue le spunte di Google Calendar ("Famiglia" risultava non visibile pur essendo spuntato). Quali calendari mostrare lo decide ogni widget.
 
 ## Impostazioni per widget
 
@@ -77,6 +77,8 @@ Ogni widget ha le sue impostazioni (`WidgetSettings`), salvate per id del widget
 - Il testo segue il tema chiaro/scuro e non ha ombre (scelta dell'utente): sta a lui scegliere uno sfondo della Home adatto, oppure poca trasparenza.
 - **Numero di giorni:** da 1 a 7, predefinito 3.
 - **Inizia da lunedì:** vale da 5 giorni in su (sotto resta salvato ma non ha effetto, e l'interruttore è disattivato). Quando i giorni scelti della settimana sono finiti (sabato e domenica con 5 giorni, domenica con 6) si mostra la **settimana successiva**; con 7 giorni sempre la settimana in corso. La regola è in `WidgetSettings.firstDay`.
+- **Calendari:** `calendarIds` a `null` (predefinito) vuol dire **tutti**, compresi quelli creati in seguito; un insieme vuol dire solo quelli. Spuntarli tutti nella schermata torna a `null` (`WidgetSettings.calendarSelection`). Gli id che non esistono più si ignorano. La lista mostra solo i calendari sincronizzati, il principale per primo, con la casella del colore Google Calendar.
+- Un calendario appena creato arriva nel calendario del telefono solo quando Google lo sincronizza (sul telefono di sviluppo una volta al giorno, oppure con "Aggiorna" nel menu di Google Calendar). Prima di allora il widget non può vederlo: la schermata lo spiega sotto la lista.
 - Nuove impostazioni vanno in `WidgetSettings`, in `WidgetSettingsStore` (con la cancellazione in `delete`) e in questa schermata.
 - `MainActivity` mostra l'anteprima (`WidgetPreview`) con le impostazioni predefinite.
 
