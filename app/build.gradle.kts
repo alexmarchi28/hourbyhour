@@ -16,6 +16,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Coverage reports (see CLAUDE.md). Coverage of device tests puts JaCoCo into the debug
+            // APK, so it is on only when asked for with -Pcoverage.
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = providers.gradleProperty("coverage").isPresent
+        }
         release {
             isMinifyEnabled = false
         }
