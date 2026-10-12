@@ -16,15 +16,17 @@ class WidgetSettingsStore(context: Context) {
     )
 
     fun save(widgetId: Int, settings: WidgetSettings) {
-        preferences.edit()
+        val editor = preferences.edit()
             .putInt(transparencyKey(widgetId), settings.transparency)
             .putInt(dayCountKey(widgetId), settings.dayCount)
             .putBoolean(startOnMondayKey(widgetId), settings.startOnMonday)
-            .apply {
-                val ids = settings.calendarIds
-                if (ids == null) remove(calendarsKey(widgetId)) else putStringSet(calendarsKey(widgetId), ids.map { it.toString() }.toSet())
-            }
-            .apply()
+        val calendarIds = settings.calendarIds
+        if (calendarIds == null) {
+            editor.remove(calendarsKey(widgetId))
+        } else {
+            editor.putStringSet(calendarsKey(widgetId), calendarIds.map { it.toString() }.toSet())
+        }
+        editor.apply()
     }
 
     /** Forgets the settings of widgets removed from the home screen. */
