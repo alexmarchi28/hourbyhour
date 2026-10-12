@@ -10,3 +10,8 @@ build/
 .idea/
 *.iml
 captures/
+
+# Upload key for Google Play (see CLAUDE.md)
+/keystore.properties
+*.jks
+*.keystore
