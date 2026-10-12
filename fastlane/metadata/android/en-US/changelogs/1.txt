@@ -1,0 +1,1 @@
+First release: an hour-by-hour calendar widget for the home screen.

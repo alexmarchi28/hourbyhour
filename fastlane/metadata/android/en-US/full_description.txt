@@ -1,0 +1,15 @@
+HourByHour puts your agenda on the home screen as an hour grid, like the day and week views of a calendar app: one column per day, every event in its time slot, and a line at the current time.
+
+• From 1 to 7 days, starting today or from Monday
+• Events in the same colors as in Google Calendar, in the light and dark theme
+• All-day events in a row above the grid
+• Overlapping events side by side, short events still readable
+• Background transparency you can choose for every widget
+• Choose which calendars each widget shows
+• Tap an event to open it, or a day to see that day, in your calendar app
+• Resize it as you like: hours and titles adapt to the size of the widget
+
+Private by design
+HourByHour reads the calendar stored on your phone, which Google Calendar keeps in sync. No sign-in, no account and no internet access: your events never leave your phone.
+
+Free, with no ads.

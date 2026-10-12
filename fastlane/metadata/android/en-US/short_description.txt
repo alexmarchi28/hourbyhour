@@ -1,0 +1,1 @@
+Your calendar events, hour by hour, in a resizable home screen widget.

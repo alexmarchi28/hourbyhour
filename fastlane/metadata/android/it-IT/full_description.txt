@@ -1,0 +1,15 @@
+HourByHour mette la tua agenda sulla schermata Home come una griglia oraria, come le viste giorno e settimana di un'app calendario: una colonna per giorno, ogni evento nella sua fascia oraria e una linea sull'ora attuale.
+
+• Da 1 a 7 giorni, a partire da oggi o da lunedì
+• Eventi con gli stessi colori di Google Calendar, nel tema chiaro e scuro
+• Eventi di tutto il giorno in una riga sopra la griglia
+• Eventi sovrapposti affiancati, eventi brevi sempre leggibili
+• Trasparenza dello sfondo da scegliere per ogni widget
+• Scegli quali calendari mostrare in ogni widget
+• Tocca un evento per aprirlo, o un giorno per vederlo, nell'app calendario
+• Ridimensionalo come vuoi: ore e titoli si adattano alle dimensioni del widget
+
+Privacy prima di tutto
+HourByHour legge il calendario salvato sul telefono, che Google Calendar tiene sincronizzato. Nessun login, nessun account e nessun accesso a internet: i tuoi eventi non escono mai dal telefono.
+
+Gratis e senza pubblicità.
