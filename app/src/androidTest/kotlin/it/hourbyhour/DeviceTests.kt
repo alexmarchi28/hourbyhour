@@ -14,6 +14,14 @@ val instrumentation: Instrumentation get() = InstrumentationRegistry.getInstrume
 /** The context of the app under test. */
 val targetContext: Context get() = instrumentation.targetContext
 
+/**
+ * Waits until the widget settings saved with apply() are on disk. The test process ends as soon as
+ * the last test does, and would lose them. A commit waits for the writes queued before it.
+ */
+fun flushWidgetSettings() {
+    targetContext.getSharedPreferences(WidgetSettingsStore.FILE_NAME, Context.MODE_PRIVATE).edit().commit()
+}
+
 /** Runs [block] on the main thread, where views live, and returns its result. */
 fun <T> onMain(block: () -> T): T {
     var result: Result<T>? = null

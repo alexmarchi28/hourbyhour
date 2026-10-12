@@ -4,11 +4,11 @@ import android.content.Context
 import android.content.SharedPreferences
 
 /**
- * Keeps the [WidgetSettings] of each widget on the home screen, by widget id. The key names are the
- * saved format: renaming them loses the settings of the widgets already on the home screen.
+ * Keeps the [WidgetSettings] of each widget on the home screen, by widget id. The file and key names
+ * are the saved format: renaming them loses the settings of the widgets already on the home screen.
  */
 class WidgetSettingsStore(private val preferences: SharedPreferences) {
-    constructor(context: Context) : this(context.getSharedPreferences("widget_settings", Context.MODE_PRIVATE))
+    constructor(context: Context) : this(context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE))
 
     fun load(widgetId: Int) = WidgetSettings(
         transparency = preferences.getInt(transparencyKey(widgetId), WidgetSettings.DEFAULT_TRANSPARENCY).coerceIn(0, 100),
@@ -46,4 +46,8 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
     private fun dayCountKey(widgetId: Int) = "days_$widgetId"
     private fun startOnMondayKey(widgetId: Int) = "from_monday_$widgetId"
     private fun calendarsKey(widgetId: Int) = "calendars_$widgetId"
+
+    companion object {
+        const val FILE_NAME = "widget_settings"
+    }
 }

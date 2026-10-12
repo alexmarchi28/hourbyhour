@@ -29,7 +29,11 @@ class WidgetSettingsActivityDeviceTest {
 
     @After
     fun removeWidget() {
-        if (::widget.isInitialized) widget.close()
+        if (!::widget.isInitialized) return
+        widget.close()
+        // The app forgets them too, but maybe only after the test process has ended.
+        store.delete(intArrayOf(widget.id))
+        flushWidgetSettings()
     }
 
     private fun open(widgetId: Int = widget.id): ActivityScenario<WidgetSettingsActivity> = ActivityScenario.launchActivityForResult(
