@@ -13,8 +13,10 @@ import android.widget.RemoteViews
  *
  * All decisions about what to show and where belong in [layoutWidget], which is unit tested.
  */
-class WidgetViews(private val context: Context, private val settings: WidgetSettings) {
+class WidgetViews(private val context: Context, private val settings: WidgetSettings, clickable: Boolean) {
     private val packageName = context.packageName
+    /** Null in previews: tapping them must not leave the app. */
+    private val intents = if (clickable) CalendarIntents(context) else null
     private val lightBackground = themedColor(R.color.widget_background, night = false)
     private val darkBackground = themedColor(R.color.widget_background, night = true)
 
@@ -33,12 +35,13 @@ class WidgetViews(private val context: Context, private val settings: WidgetSett
         for (header in layout.headers) {
             val views = RemoteViews(packageName, if (header.today) R.layout.day_header_today else R.layout.day_header)
             views.setTextViewText(R.id.day_header, header.label)
+            views.setClick(R.id.day_header, header.click)
             root.addView(R.id.headers, views)
         }
 
         for (row in layout.bannerRows) {
             val rowViews = RemoteViews(packageName, R.layout.banner_row)
-            for (cell in row) rowViews.addView(R.id.banner_row, bannerCell(cell))
+            row.forEachIndexed { day, cell -> rowViews.addView(R.id.banner_row, bannerCell(cell, layout.columns[day].click)) }
             root.addView(R.id.banners, rowViews)
         }
 
@@ -50,6 +53,8 @@ class WidgetViews(private val context: Context, private val settings: WidgetSett
 
         for (column in layout.columns) {
             val columnViews = RemoteViews(packageName, R.layout.day_column)
+            // Events are clickable views on top of the column: a tap elsewhere reaches the column.
+            columnViews.setClick(R.id.day_column, column.click)
             for (box in column.events) columnViews.addView(R.id.day_column, event(box))
             column.nowLine?.let { columnViews.addView(R.id.day_column, nowLine(it)) }
             root.addView(R.id.columns, columnViews)
@@ -57,14 +62,19 @@ class WidgetViews(private val context: Context, private val settings: WidgetSett
         return root
     }
 
-    /** Every day gets the same cell, so that cells line up with the grid columns below. */
-    private fun bannerCell(cell: BannerCell) = RemoteViews(packageName, R.layout.banner_cell).apply {
+    /**
+     * Every day gets the same cell, so that cells line up with the grid columns below. A tap on the
+     * cell (empty, or with the "+N" text) opens the day; a tap on an event chip opens the event.
+     */
+    private fun bannerCell(cell: BannerCell, dayClick: ClickTarget) = RemoteViews(packageName, R.layout.banner_cell).apply {
+        setClick(R.id.banner_cell, dayClick)
         when (cell) {
             is BannerCell.Event -> addView(
                 R.id.banner_cell,
                 RemoteViews(packageName, R.layout.banner_chip).apply {
                     setTextViewText(R.id.banner_chip, cell.event.title)
                     setEventColors(R.id.banner_chip, cell.event.color, past = false)
+                    setClick(R.id.banner_chip, cell.event.clickTarget())
                 },
             )
             is BannerCell.More -> addView(
@@ -89,7 +99,12 @@ class WidgetViews(private val context: Context, private val settings: WidgetSett
             if (box.title != TitleSize.NONE) setTextViewText(R.id.event_box, box.event.title)
             if (box.title == TitleSize.NORMAL) setInt(R.id.event_box, "setMaxLines", box.maxLines)
             setEventColors(R.id.event_box, box.event.color, box.past)
+            setClick(R.id.event_box, box.event.clickTarget())
         }
+    }
+
+    private fun RemoteViews.setClick(viewId: Int, target: ClickTarget) {
+        intents?.let { setOnClickPendingIntent(viewId, it.pendingIntent(target)) }
     }
 
     private fun nowLine(top: Float) = RemoteViews(packageName, R.layout.now_line).apply {

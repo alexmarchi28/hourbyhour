@@ -28,9 +28,12 @@ object WidgetUpdater {
         return Agenda(CalendarSource.load(context, begin, end), now)
     }
 
-    /** The widget content, or a message asking for calendar access when [agenda] is null. */
-    fun views(context: Context, agenda: Agenda?, size: WidgetSize, settings: WidgetSettings): RemoteViews {
-        val views = WidgetViews(context, settings)
+    /**
+     * The widget content, or a message asking for calendar access when [agenda] is null. Previews
+     * are not [clickable]: a tap would open the calendar app and leave the preview.
+     */
+    fun views(context: Context, agenda: Agenda?, size: WidgetSize, settings: WidgetSettings, clickable: Boolean = true): RemoteViews {
+        val views = WidgetViews(context, settings, clickable)
         if (agenda == null) return views.message()
         val fontScale = context.resources.configuration.fontScale
         return views.build(layoutWidget(agenda.snapshot(settings), size, fontScale, Locale.getDefault()))
