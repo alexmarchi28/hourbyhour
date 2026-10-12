@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nothing goes to the cloud backup or to a new phone. The only data are the settings of each widget,
+    kept by widget id, and widgets get new ids on another phone. This way nothing leaves the phone, as
+    the privacy policy says.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="." />
+    </device-transfer>
+</data-extraction-rules>
