@@ -149,9 +149,29 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 
 ## Convenzioni
 
-- Identificatori, commenti e messaggi di commit in **inglese**. Testi mostrati all'utente in **italiano** (`strings.xml`).
+- Identificatori, commenti e messaggi di commit in **inglese**. Testi mostrati all'utente in **inglese** (`values/strings.xml`, la lingua predefinita) e **italiano** (`values-it/strings.xml`): ogni testo nuovo va in entrambi.
 - Niente stato globale: gli `object` (`WidgetUpdater`, `CalendarSource`) non hanno stato.
 - Lettura del calendario e costruzione del widget fuori dal main thread (`goAsync` nel provider, thread nel job e in `WidgetPreview`).
+
+## Pubblicazione su Google Play
+
+La guida passo passo per la Play Console è in `docs/pubblicazione-play-store.md`.
+
+- `./gradlew bundleRelease` crea `app/build/outputs/bundle/release/app-release.aab`, da caricare nella Play Console. Prima di ogni caricamento aumenta `versionCode` (e `versionName`) in `app/build.gradle.kts`.
+- La build di release passa da R8 (codice e risorse inutilizzati rimossi). Prima di pubblicarla provala sul telefono: firma l'APK di release con la chiave di debug (`apksigner sign --ks ~/.android/debug.keystore`, password `android`) e installalo sopra la build di debug, così il widget sulla Home resta. Poi reinstalla la build di debug.
+- La chiave di caricamento è `~/.android-keys/hourbyhour-upload.jks`; percorso e password sono in `keystore.properties`, fuori da git. Non metterli mai nel repository. Senza quel file la build di release esce non firmata.
+- L'informativa sulla privacy è nel repository **pubblico** `alexmarchi28/hourbyhour-privacy` (GitHub Pages: https://alexmarchi28.github.io/hourbyhour-privacy/), linkata dall'app (`MainActivity`) e dalla scheda dello store. Dice che i dati non escono dal telefono: niente permesso `INTERNET`, impostazioni escluse dai backup (`data_extraction_rules.xml`). Se cambia il modo in cui l'app tratta i dati, aggiorna l'informativa, il modulo "Sicurezza dei dati" e i testi della scheda.
+
+### Scheda dello store
+
+Testi e immagini sono in `fastlane/metadata/android/<lingua>/` (`en-US`, `it-IT`), nella struttura usata da fastlane. Icona, grafica in primo piano e screenshot li disegna `StoreGraphics`, un test sul telefono, con eventi inventati (mai con il calendario vero) e nelle dimensioni chieste da Google Play. Le immagini restano tra i file dell'app; per copiarle nel repository:
+
+```bash
+./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=it.hourbyhour.StoreGraphics
+adb exec-out run-as it.hourbyhour tar c -C files/store . | tar x -C fastlane/metadata/android
+```
+
+Rigenerale quando cambia l'aspetto del widget, e guardale prima di committarle.
 
 ## Git
 
