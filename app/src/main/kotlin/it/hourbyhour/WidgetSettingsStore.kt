@@ -1,10 +1,14 @@
 package it.hourbyhour
 
 import android.content.Context
+import android.content.SharedPreferences
 
-/** Keeps the [WidgetSettings] of each widget on the home screen, by widget id. */
-class WidgetSettingsStore(context: Context) {
-    private val preferences = context.getSharedPreferences("widget_settings", Context.MODE_PRIVATE)
+/**
+ * Keeps the [WidgetSettings] of each widget on the home screen, by widget id. The key names are the
+ * saved format: renaming them loses the settings of the widgets already on the home screen.
+ */
+class WidgetSettingsStore(private val preferences: SharedPreferences) {
+    constructor(context: Context) : this(context.getSharedPreferences("widget_settings", Context.MODE_PRIVATE))
 
     fun load(widgetId: Int) = WidgetSettings(
         transparency = preferences.getInt(transparencyKey(widgetId), WidgetSettings.DEFAULT_TRANSPARENCY).coerceIn(0, 100),
