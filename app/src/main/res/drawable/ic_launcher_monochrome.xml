@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The icon in one color, for themed icons: the launcher tints it, so the card is drawn as a frame
+    with the events inside, instead of colored shapes on white.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Card with its header, open below the header -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M36,34h36a4,4 0 0 1 4,4v32a4,4 0 0 1 -4,4h-36a4,4 0 0 1 -4,-4v-32a4,4 0 0 1 4,-4z M34.5,42v29.5h39v-29.5z" />
+    <!-- Events: one column per day -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M37,45h9v10h-9z M49.5,51h9v16h-9z M62,45h9v6h-9z M62,55h9v10h-9z" />
+</vector>
