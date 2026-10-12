@@ -56,6 +56,13 @@ class WidgetSettingsTest {
     }
 
     @Test
+    fun mondayStartCanBeChosenFromFiveDaysEvenWhenOff() {
+        assertFalse(WidgetSettings(dayCount = 4).canStartOnMonday)
+        assertTrue(WidgetSettings(dayCount = 5).canStartOnMonday)
+        assertTrue(WidgetSettings(dayCount = 7).canStartOnMonday)
+    }
+
+    @Test
     fun workWeekStartsOnMondayUntilFriday() {
         for (day in 12..16) assertEquals("October $day", october(12), fromMonday(5).firstDay(october(day)))
     }

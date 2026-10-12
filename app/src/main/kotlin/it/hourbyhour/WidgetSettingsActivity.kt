@@ -107,7 +107,7 @@ class WidgetSettingsActivity : Activity() {
         transparencyValue.text = getString(R.string.transparency_value, settings.transparency)
         dayCountValue.text = getString(R.string.day_count_value, settings.dayCount)
         // The choice is kept below five days, but has no effect there.
-        startOnMonday.isEnabled = settings.dayCount >= WidgetSettings.MIN_DAYS_FROM_MONDAY
+        startOnMonday.isEnabled = settings.canStartOnMonday
         preview.settings = settings
     }
 

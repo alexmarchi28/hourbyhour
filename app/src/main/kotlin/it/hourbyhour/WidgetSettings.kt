@@ -27,8 +27,11 @@ data class WidgetSettings(
     /** Whether the widget shows the events of the calendar with [calendarId]. */
     fun shows(calendarId: Long): Boolean = calendarIds == null || calendarId in calendarIds
 
-    /** Whether the widget shows a week from Monday: with fewer days it always starts today. */
-    val startsOnMonday: Boolean get() = startOnMonday && dayCount >= MIN_DAYS_FROM_MONDAY
+    /** Whether [startOnMonday] applies with this many days: with fewer days the widget always starts today. */
+    val canStartOnMonday: Boolean get() = dayCount >= MIN_DAYS_FROM_MONDAY
+
+    /** Whether the widget shows a week from Monday. */
+    val startsOnMonday: Boolean get() = startOnMonday && canStartOnMonday
 
     /**
      * The first day shown when it is [today]. From Monday, once the chosen days of this week are
