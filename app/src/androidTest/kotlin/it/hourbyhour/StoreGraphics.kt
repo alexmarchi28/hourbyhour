@@ -17,21 +17,19 @@ import android.text.TextPaint
 import android.view.View.MeasureSpec
 import android.widget.FrameLayout
 import android.widget.TextView
-import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Locale
-import org.junit.Assume.assumeTrue
-import org.junit.Before
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
  * Draws the pictures of the Google Play store listing with made-up events: the icon, the feature
- * graphic and the phone screenshots, in English and Italian. The widget is the real one, drawn as
- * a launcher would. Not a test: it runs only when asked, and saves into the files of the app (see
- * "Scheda dello store" in CLAUDE.md).
+ * graphic and the phone screenshots, in English and Italian, in the sizes Google Play asks for. The
+ * widget is the real one, drawn as a launcher would. The pictures stay in the files of the app,
+ * from where they are copied into the repository when they change ("Scheda dello store" in CLAUDE.md).
  */
 class StoreGraphics {
     private val density = targetContext.resources.displayMetrics.density
@@ -40,11 +38,6 @@ class StoreGraphics {
 
     /** Tuesday morning, in a week with events every day. */
     private val now = LocalDate.of(2026, 10, 13).atTime(10, 40).atZone(zone)
-
-    @Before
-    fun onlyWhenAsked() {
-        assumeTrue(InstrumentationRegistry.getArguments().getString("storeGraphics") == "true")
-    }
 
     @Test
     fun icon() {
@@ -94,6 +87,12 @@ class StoreGraphics {
     private class Shot(val caption: String, val dark: Boolean, val settings: WidgetSettings)
 
     private fun save(path: String, bitmap: Bitmap) {
+        val (width, height) = when {
+            path.endsWith("icon.png") -> 512 to 512
+            path.endsWith("featureGraphic.png") -> 1024 to 500
+            else -> 1080 to 1920
+        }
+        assertEquals("Size of $path", width to height, bitmap.width to bitmap.height)
         val file = File(output, path)
         file.parentFile!!.mkdirs()
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
