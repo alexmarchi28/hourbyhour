@@ -4,8 +4,12 @@ import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.Button
+import android.widget.CheckBox
+import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
@@ -61,6 +65,36 @@ class WidgetSettingsActivity : Activity() {
         findViewById<Button>(R.id.done).setOnClickListener { save() }
         showSettings()
         preview.reload()
+
+        val context = applicationContext
+        thread {
+            val calendars = if (CalendarSource.hasPermission(context)) CalendarSource.loadCalendars(context) else emptyList()
+            runOnUiThread { if (!isDestroyed) showCalendars(calendars) }
+        }
+    }
+
+    /** A check box per calendar, tinted with the color Google Calendar gives it. */
+    private fun showCalendars(calendars: List<CalendarInfo>) {
+        val container = findViewById<LinearLayout>(R.id.calendars)
+        if (calendars.isEmpty()) {
+            container.addView(TextView(this).apply { setText(R.string.no_calendars) })
+            return
+        }
+        val dark = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+        val available = calendars.map { it.id }
+        val checked = available.filter { settings.shows(it) }.toMutableSet()
+        for (calendar in calendars) {
+            container.addView(CheckBox(this).apply {
+                text = calendar.name
+                isChecked = calendar.id in checked
+                buttonTintList = ColorStateList.valueOf(GoogleColors.forDisplay(calendar.color, dark))
+                setOnCheckedChangeListener { _, isChecked ->
+                    if (isChecked) checked += calendar.id else checked -= calendar.id
+                    settings = settings.copy(calendarIds = WidgetSettings.calendarSelection(checked, available))
+                    showSettings()
+                }
+            })
+        }
     }
 
     /** The activity is exported for the launcher: ignore ids that are not widgets of this app. */
