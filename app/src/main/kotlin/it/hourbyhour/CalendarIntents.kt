@@ -14,7 +14,10 @@ import android.provider.CalendarContract
 class CalendarIntents(private val context: Context) {
     private val calendarPackage = GOOGLE_CALENDAR.takeIf { isInstalled(it) }
 
-    fun pendingIntent(target: ClickTarget): PendingIntent {
+    fun pendingIntent(target: ClickTarget): PendingIntent =
+        PendingIntent.getActivity(context, 0, intent(target), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+
+    fun intent(target: ClickTarget): Intent {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(calendarUri(target)))
         if (target is ClickTarget.Event) {
             intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, target.begin)
@@ -24,7 +27,7 @@ class CalendarIntents(private val context: Context) {
         // Pending intents are told apart by their data, not by extras, and the occurrences of a
         // recurring event share the data: without its own identifier, a tap could open another one.
         intent.identifier = target.toString()
-        return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        return intent
     }
 
     private fun isInstalled(packageName: String) = try {

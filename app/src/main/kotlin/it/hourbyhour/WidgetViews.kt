@@ -1,5 +1,6 @@
 package it.hourbyhour
 
+import android.app.PendingIntent
 import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Configuration
@@ -12,11 +13,14 @@ import android.widget.RemoteViews
  * switch them as soon as the theme changes.
  *
  * All decisions about what to show and where belong in [layoutWidget], which is unit tested.
+ * Taps send the pending intents made by [clicks]; without it (in previews) the views do nothing.
  */
-class WidgetViews(private val context: Context, private val settings: WidgetSettings, clickable: Boolean) {
+class WidgetViews(
+    private val context: Context,
+    private val settings: WidgetSettings,
+    private val clicks: ((ClickTarget) -> PendingIntent)?,
+) {
     private val packageName = context.packageName
-    /** Null in previews: tapping them must not leave the app. */
-    private val intents = if (clickable) CalendarIntents(context) else null
     private val lightBackground = themedColor(R.color.widget_background, night = false)
     private val darkBackground = themedColor(R.color.widget_background, night = true)
 
@@ -104,7 +108,7 @@ class WidgetViews(private val context: Context, private val settings: WidgetSett
     }
 
     private fun RemoteViews.setClick(viewId: Int, target: ClickTarget) {
-        intents?.let { setOnClickPendingIntent(viewId, it.pendingIntent(target)) }
+        clicks?.let { setOnClickPendingIntent(viewId, it(target)) }
     }
 
     /** The line sits on the top edge of a view that spans from the current time down, like an event. */

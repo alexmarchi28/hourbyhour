@@ -25,12 +25,10 @@ object WidgetUpdater {
         return Agenda(CalendarSource.load(context, begin, end), now)
     }
 
-    /**
-     * The widget content, or a message asking for calendar access when [agenda] is null. Previews
-     * are not [clickable]: a tap would open the calendar app and leave the preview.
-     */
+    /** The widget content, or a message asking for calendar access when [agenda] is null. Previews are not [clickable]. */
     fun views(context: Context, agenda: Agenda?, size: WidgetSize, settings: WidgetSettings, clickable: Boolean = true): RemoteViews {
-        val views = WidgetViews(context, settings, clickable)
+        // A tap on a preview would open the calendar app and leave the preview.
+        val views = WidgetViews(context, settings, if (clickable) CalendarIntents(context)::pendingIntent else null)
         if (agenda == null) return views.message()
         val fontScale = context.resources.configuration.fontScale
         return views.build(layoutWidget(agenda.snapshot(settings), size, fontScale, Locale.getDefault()))
