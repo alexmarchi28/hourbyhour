@@ -120,7 +120,7 @@ Aggiornamenti: alla aggiunta e al ridimensionamento del widget, quando cambia il
 
 ## Verifica sul telefono
 
-I test JVM coprono la logica pura (`Timeline`, `GoogleColors`, `WidgetLayout`, `EventColors`, `WidgetSettings`, `nextRefreshTime`), non le RemoteViews. Ogni modifica al widget va provata sul telefono: installa, forza l'aggiornamento e guarda il risultato (`adb exec-out screencap -p > shot.png`). Prova anche dimensioni diverse (ridimensionando il widget) e il tema chiaro (`adb shell cmd uimode night no`, poi ripristina con `yes`). L'anteprima nell'app usa le stesse `RemoteViews`, ma non sostituisce la prova sul launcher.
+I test JVM coprono la logica pura (vedi "Test"), non le RemoteViews. Ogni modifica al widget va provata sul telefono: installa, forza l'aggiornamento e guarda il risultato (`adb exec-out screencap -p > shot.png`). Prova anche dimensioni diverse (ridimensionando il widget) e il tema chiaro (`adb shell cmd uimode night no`, poi ripristina con `yes`). L'anteprima nell'app usa le stesse `RemoteViews`, ma non sostituisce la prova sul launcher.
 
 Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (stesso tema) e leggi il colore di un pixel al centro di un evento, lontano dal testo.
 
@@ -129,6 +129,10 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 - Ogni modifica alla logica arriva con i suoi test. Per i casi limite (mezzanotte, ora legale, eventi che si toccano, evento che finisce adesso) scrivi un test esplicito.
 - Per capire se i test proteggono davvero una parte di codice, rompila apposta (cambia un `<=` in `<`, un coefficiente, una condizione) e controlla che almeno un test fallisca. Poi ripristina con `git checkout`.
 - I colori attesi nei test di `GoogleColors` vengono da screenshot reali o da un'implementazione indipendente: non rigenerarli dal codice Kotlin, altrimenti il test non verifica più niente.
+- I test girano sulla JVM, dove le classi Android esistono solo come stub che lanciano eccezioni. Per testare codice che tocca Android:
+  - le decisioni stanno in funzioni senza tipi Android, anche dentro i file Android: `nextRefreshTime` ed `estimatedSize` (`WidgetUpdater.kt`), `calendarUri` (`CalendarIntents.kt`), `spanWeightSums` (`WidgetViews.kt`);
+  - le interfacce Android si sostituiscono con finti in memoria: `FakeSharedPreferences` per `WidgetSettingsStore`, `fakeCursor` per le righe lette da `CalendarSource` (ha solo le colonne della query, come il provider).
+- Non sono coperti da test automatici, e vanno provati sul telefono: le RemoteViews (`WidgetViews`), le query sul provider (filtri `SELECTION`), le activity, l'anteprima, gli aggiornamenti (`HourByHourWidget`, `CalendarChangeJob`, sveglia).
 
 ## Convenzioni
 
