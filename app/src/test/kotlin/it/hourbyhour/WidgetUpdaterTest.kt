@@ -35,4 +35,16 @@ class WidgetUpdaterTest {
 
         assertEquals("2026-10-12T00:00:05", Instant.ofEpochMilli(nextRefreshTime(now)).atZone(india).toLocalDateTime().toString())
     }
+
+    @Test
+    fun sizeIsTheOneReportedByTheLauncher() {
+        assertEquals(WidgetSize(310f, 420f), estimatedSize(minWidthDp = 310, maxHeightDp = 420))
+    }
+
+    @Test
+    fun sizeNotReportedYetIsAboutTheDefaultWidget() {
+        assertEquals(WidgetSize(250f, 180f), estimatedSize(minWidthDp = 0, maxHeightDp = 0))
+        assertEquals(WidgetSize(310f, 180f), estimatedSize(minWidthDp = 310, maxHeightDp = 0))
+        assertEquals(WidgetSize(250f, 420f), estimatedSize(minWidthDp = 0, maxHeightDp = 420))
+    }
 }

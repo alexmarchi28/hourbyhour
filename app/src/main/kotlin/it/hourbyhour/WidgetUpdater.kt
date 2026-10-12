@@ -6,7 +6,6 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import android.util.Log
 import android.widget.RemoteViews
 import java.time.ZoneId
@@ -15,8 +14,6 @@ import java.util.Locale
 
 /** Loads the events, builds the widget views and pushes them to the widgets on the home screen. */
 object WidgetUpdater {
-    private const val DEFAULT_WIDTH_DP = 250f
-    private const val DEFAULT_HEIGHT_DP = 180f
     private const val TAG = "HourByHour"
 
     /** The events of the current and next week, or null when calendar access has not been granted. */
@@ -53,7 +50,11 @@ object WidgetUpdater {
             val agenda = loadAgenda(context)
             val store = WidgetSettingsStore(context)
             for (id in widgetIds) {
-                val size = estimatedSize(manager.getAppWidgetOptions(id))
+                val options = manager.getAppWidgetOptions(id)
+                val size = estimatedSize(
+                    minWidthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH),
+                    maxHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT),
+                )
                 manager.updateAppWidget(id, views(context, agenda, size, store.load(id)))
             }
         } catch (e: RuntimeException) {
@@ -71,16 +72,6 @@ object WidgetUpdater {
     }
 
     /**
-     * The widget size in portrait as reported by the launcher: as wide as the minimum width and as
-     * tall as the maximum height. Some launchers get it wrong (the Motorola one reports about 3/4 of
-     * the height), so it is only used for estimates: the layout itself adapts to the real size.
-     */
-    private fun estimatedSize(options: Bundle) = WidgetSize(
-        widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH).takeIf { it > 0 }?.toFloat() ?: DEFAULT_WIDTH_DP,
-        heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT).takeIf { it > 0 }?.toFloat() ?: DEFAULT_HEIGHT_DP,
-    )
-
-    /**
      * Redraws at the next quarter hour, so the current-time line moves and the days roll over at
      * midnight. RTC (not RTC_WAKEUP) never wakes the phone: a sleeping phone redraws when it wakes up.
      */
@@ -96,6 +87,21 @@ object WidgetUpdater {
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 }
+
+/**
+ * The widget size in portrait as reported by the launcher: in portrait a widget is as wide as its
+ * minimum width and as tall as its maximum height. A launcher that has not reported them yet gives 0.
+ * Some launchers get it wrong (the Motorola one reports about 3/4 of the height), so it is only used
+ * for estimates: the layout itself adapts to the real size.
+ */
+fun estimatedSize(minWidthDp: Int, maxHeightDp: Int) = WidgetSize(
+    widthDp = minWidthDp.takeIf { it > 0 }?.toFloat() ?: DEFAULT_WIDTH_DP,
+    heightDp = maxHeightDp.takeIf { it > 0 }?.toFloat() ?: DEFAULT_HEIGHT_DP,
+)
+
+// The minimum size in widget_info.xml.
+private const val DEFAULT_WIDTH_DP = 250f
+private const val DEFAULT_HEIGHT_DP = 180f
 
 private const val REFRESH_INTERVAL_MILLIS = 15 * 60 * 1000L
 
