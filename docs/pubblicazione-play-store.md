@@ -14,6 +14,16 @@ Cosa è già pronto nel repository:
 
 **Prima di tutto: fai un backup della chiave.** Copia `~/.android-keys/hourbyhour-upload.jks` e il contenuto di `keystore.properties` nel gestore di password o in un posto sicuro fuori dal PC. Se la perdi, Google può sostituirla, ma servono una richiesta al supporto e qualche giorno.
 
+## 0. Crea l'account sviluppatore
+
+Il vecchio account è stato chiuso per inattività: ne serve uno nuovo. Su https://play.google.com/console/signup, con il tuo account Google:
+
+- tipo di account **Personale**; quota una tantum di **25 $** con carta di credito o di debito (non prepagata);
+- verifica dell'identità con un documento e una carta intestati a te;
+- verifica di avere un telefono Android, con l'app Play Console.
+
+Gli account personali nuovi devono fare il test chiuso descritto al punto 4.
+
 ## 1. Crea l'app
 
 Play Console → **Crea app**:
