@@ -73,27 +73,35 @@ class WidgetSettingsActivity : Activity() {
         }
     }
 
-    /** A check box per calendar, tinted with the color Google Calendar gives it. */
+    /** A check box per calendar, then one for birthdays, which Google Calendar shows as a calendar of their own. */
     private fun showCalendars(calendars: List<CalendarInfo>) {
         val container = findViewById<LinearLayout>(R.id.calendars)
         if (calendars.isEmpty()) {
             container.addView(TextView(this).apply { setText(R.string.no_calendars) })
             return
         }
-        val dark = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         val available = calendars.map { it.id }
         val checked = available.filter { settings.shows(it) }.toMutableSet()
         for (calendar in calendars) {
-            container.addView(CheckBox(this).apply {
-                text = calendar.name
-                isChecked = calendar.id in checked
-                buttonTintList = ColorStateList.valueOf(GoogleColors.forDisplay(calendar.color, dark))
-                setOnCheckedChangeListener { _, isChecked ->
-                    if (isChecked) checked += calendar.id else checked -= calendar.id
-                    settings = settings.copy(calendarIds = WidgetSettings.calendarSelection(checked, available))
-                    showSettings()
-                }
+            container.addView(calendarBox(calendar.name, calendar.color, calendar.id in checked) { isChecked ->
+                if (isChecked) checked += calendar.id else checked -= calendar.id
+                settings = settings.copy(calendarIds = WidgetSettings.calendarSelection(checked, available))
             })
+        }
+        container.addView(calendarBox(getString(R.string.birthdays), GoogleColors.BIRTHDAYS, settings.showBirthdays) { isChecked ->
+            settings = settings.copy(showBirthdays = isChecked)
+        })
+    }
+
+    /** A check box tinted with [color] as Google Calendar shows it. [update] changes the settings for a new state. */
+    private fun calendarBox(name: String, color: Int, checked: Boolean, update: (Boolean) -> Unit) = CheckBox(this).apply {
+        val dark = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+        text = name
+        isChecked = checked
+        buttonTintList = ColorStateList.valueOf(GoogleColors.forDisplay(color, dark))
+        setOnCheckedChangeListener { _, isChecked ->
+            update(isChecked)
+            showSettings()
         }
     }
 

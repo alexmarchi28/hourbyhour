@@ -24,6 +24,7 @@
     <string name="start_on_monday_hint">With 5 days or more: shows the week from Monday. Once the chosen days are over, shows the next week.</string>
     <string name="calendars_label">Calendars</string>
     <string name="calendars_hint">If you just created a calendar and it is not here, open Google Calendar and tap Refresh in its menu: the phone downloads new calendars only now and then.</string>
+    <string name="birthdays">Birthdays</string>
     <string name="no_calendars">No calendars synced to the phone.</string>
     <string name="done">Done</string>
 </resources>

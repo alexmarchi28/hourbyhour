@@ -114,8 +114,36 @@ class WidgetSettingsActivityDeviceTest {
             val boxes = scenario.calendarBoxes()
             assumeTrue("No calendars on the phone", boxes.isNotEmpty())
 
-            assertEquals(CalendarSource.loadCalendars(targetContext).map { it.name }, onMain { boxes.map { it.text.toString() } })
+            val names = CalendarSource.loadCalendars(targetContext).map { it.name } + targetContext.getString(R.string.birthdays)
+            assertEquals(names, onMain { boxes.map { it.text.toString() } })
             assertTrue(onMain { boxes.all { it.isChecked } })
+        }
+    }
+
+    private fun ActivityScenario<WidgetSettingsActivity>.birthdaysBox() = calendarBoxes().last()
+
+    @Test
+    fun birthdaysCanBeHiddenApartFromTheCalendars() {
+        open().use { scenario ->
+            val birthdays = scenario.birthdaysBox()
+            assumeTrue("No calendars on the phone", birthdays.text == targetContext.getString(R.string.birthdays))
+            onMain { birthdays.performClick() }
+            scenario.onActivity { it.findViewById<View>(R.id.done).performClick() }
+
+            assertEquals(Activity.RESULT_OK, scenario.result.resultCode)
+        }
+        assertEquals(WidgetSettings(showBirthdays = false), store.load(widget.id))
+    }
+
+    @Test
+    fun hiddenBirthdaysShowUnchecked() {
+        store.save(widget.id, WidgetSettings(showBirthdays = false))
+
+        open().use { scenario ->
+            val birthdays = scenario.birthdaysBox()
+            assumeTrue("No calendars on the phone", birthdays.text == targetContext.getString(R.string.birthdays))
+
+            assertFalse(onMain { birthdays.isChecked })
         }
     }
 
