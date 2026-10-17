@@ -96,17 +96,17 @@ class WidgetSettingsTest {
 
     @Test
     fun byDefaultEveryCalendarIsShownIncludingNewOnes() {
-        assertTrue(WidgetSettings().shows(2))
-        assertTrue(WidgetSettings().shows(12345))
+        assertTrue(WidgetSettings().showsCalendar(2))
+        assertTrue(WidgetSettings().showsCalendar(12345))
     }
 
     @Test
     fun aSelectionShowsOnlyItsCalendars() {
         val settings = WidgetSettings(calendarIds = setOf(2, 6))
 
-        assertTrue(settings.shows(2))
-        assertTrue(settings.shows(6))
-        assertFalse(settings.shows(5))
+        assertTrue(settings.showsCalendar(2))
+        assertTrue(settings.showsCalendar(6))
+        assertFalse(settings.showsCalendar(5))
     }
 
     private val birthday = CalendarEvent("Gregorio", 0, 0, true, 0, calendarId = 2, birthday = true)
@@ -142,6 +142,6 @@ class WidgetSettingsTest {
         val selection = WidgetSettings.calendarSelection(emptySet(), listOf(2, 5, 6))
 
         assertEquals(emptySet<Long>(), selection)
-        assertFalse(WidgetSettings(calendarIds = selection).shows(2))
+        assertFalse(WidgetSettings(calendarIds = selection).showsCalendar(2))
     }
 }

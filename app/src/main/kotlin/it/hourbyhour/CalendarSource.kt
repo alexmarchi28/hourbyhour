@@ -5,6 +5,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.net.Uri
 import android.provider.CalendarContract.Attendees
 import android.provider.CalendarContract.Calendars
 import android.provider.CalendarContract.Events
@@ -61,28 +62,32 @@ object CalendarSource {
             .also { ContentUris.appendId(it, end) }
             .build()
         val untitled = context.getString(R.string.untitled_event)
-        val birthdays = loadBirthdays(context)
-        return context.contentResolver.query(uri, EVENT_COLUMNS, SELECTION, null, "${Instances.BEGIN} ASC")
-            ?.use { readEvents(it, untitled, birthdays) }
-            .orEmpty()
+        val birthdays = loadBirthdays(context).toSet()
+        return context.query(uri, EVENT_COLUMNS, SELECTION, order = "${Instances.BEGIN} ASC") { readEvents(it, untitled, birthdays) }
     }
 
     /** The ids of the events that are birthdays of contacts. */
-    private fun loadBirthdays(context: Context): Set<Long> {
+    private fun loadBirthdays(context: Context): List<Long> {
         val selection = "${ExtendedProperties.NAME} = ? AND ${ExtendedProperties.VALUE} = ?"
         val args = arrayOf(EVENT_TYPE_PROPERTY, BIRTHDAY_EVENT_TYPE)
-        return context.contentResolver.query(ExtendedProperties.CONTENT_URI, BIRTHDAY_COLUMNS, selection, args, null)
-            ?.use { readEventIds(it) }
-            .orEmpty()
+        return context.query(ExtendedProperties.CONTENT_URI, BIRTHDAY_COLUMNS, selection, args) { readEventIds(it) }
     }
 
     /** The calendars whose events are synced to the phone, the primary one first. Requires [hasPermission]. */
     fun loadCalendars(context: Context): List<CalendarInfo> {
         val order = "${Calendars.IS_PRIMARY} DESC, ${Calendars.CALENDAR_DISPLAY_NAME} COLLATE LOCALIZED ASC"
-        return context.contentResolver.query(Calendars.CONTENT_URI, CALENDAR_COLUMNS, "${Calendars.SYNC_EVENTS} = 1", null, order)
-            ?.use { readCalendars(it) }
-            .orEmpty()
+        return context.query(Calendars.CONTENT_URI, CALENDAR_COLUMNS, "${Calendars.SYNC_EVENTS} = 1", order = order) { readCalendars(it) }
     }
+
+    /** The rows of a query on the calendar provider, turned into items by [read]; none if the provider is missing. */
+    private fun <T> Context.query(
+        uri: Uri,
+        columns: Array<String>,
+        selection: String,
+        args: Array<String>? = null,
+        order: String? = null,
+        read: (Cursor) -> List<T>,
+    ): List<T> = contentResolver.query(uri, columns, selection, args, order)?.use(read).orEmpty()
 
     /**
      * The events in the rows of [cursor], with [EVENT_COLUMNS]. Events without a title are called
@@ -96,29 +101,26 @@ object CalendarSource {
         val color = cursor.getColumnIndexOrThrow(Instances.DISPLAY_COLOR)
         val calendarId = cursor.getColumnIndexOrThrow(Instances.CALENDAR_ID)
         val eventId = cursor.getColumnIndexOrThrow(Instances.EVENT_ID)
-        val events = mutableListOf<CalendarEvent>()
-        while (cursor.moveToNext()) {
-            val birthday = cursor.getLong(eventId) in birthdays
-            events += CalendarEvent(
+        return cursor.rows {
+            val id = cursor.getLong(eventId)
+            val birthday = id in birthdays
+            CalendarEvent(
                 title = cursor.getString(title)?.takeIf { it.isNotBlank() } ?: untitled,
                 begin = cursor.getLong(begin),
                 end = cursor.getLong(end),
                 allDay = cursor.getInt(allDay) == 1,
                 color = if (birthday) GoogleColors.BIRTHDAYS else opaque(cursor.getInt(color)),
                 calendarId = cursor.getLong(calendarId),
-                eventId = cursor.getLong(eventId),
+                eventId = id,
                 birthday = birthday,
             )
         }
-        return events
     }
 
     /** The event ids in the rows of [cursor], with [BIRTHDAY_COLUMNS]. */
-    fun readEventIds(cursor: Cursor): Set<Long> {
+    fun readEventIds(cursor: Cursor): List<Long> {
         val eventId = cursor.getColumnIndexOrThrow(ExtendedProperties.EVENT_ID)
-        val ids = mutableSetOf<Long>()
-        while (cursor.moveToNext()) ids += cursor.getLong(eventId)
-        return ids
+        return cursor.rows { cursor.getLong(eventId) }
     }
 
     /** The calendars in the rows of [cursor], with [CALENDAR_COLUMNS]. */
@@ -126,11 +128,14 @@ object CalendarSource {
         val id = cursor.getColumnIndexOrThrow(Calendars._ID)
         val name = cursor.getColumnIndexOrThrow(Calendars.CALENDAR_DISPLAY_NAME)
         val color = cursor.getColumnIndexOrThrow(Calendars.CALENDAR_COLOR)
-        val calendars = mutableListOf<CalendarInfo>()
-        while (cursor.moveToNext()) {
-            calendars += CalendarInfo(id = cursor.getLong(id), name = cursor.getString(name) ?: "", color = opaque(cursor.getInt(color)))
-        }
-        return calendars
+        return cursor.rows { CalendarInfo(id = cursor.getLong(id), name = cursor.getString(name) ?: "", color = opaque(cursor.getInt(color))) }
+    }
+
+    /** Reads every row of [this] with [read], which reads the current row. */
+    private inline fun <T> Cursor.rows(read: () -> T): List<T> {
+        val items = mutableListOf<T>()
+        while (moveToNext()) items += read()
+        return items
     }
 
     /** Provider colors may lack the alpha channel. */

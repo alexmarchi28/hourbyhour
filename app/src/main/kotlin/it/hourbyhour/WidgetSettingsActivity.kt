@@ -5,7 +5,6 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.Button
 import android.widget.CheckBox
@@ -81,7 +80,7 @@ class WidgetSettingsActivity : Activity() {
             return
         }
         val available = calendars.map { it.id }
-        val checked = available.filter { settings.shows(it) }.toMutableSet()
+        val checked = available.filter { settings.showsCalendar(it) }.toMutableSet()
         for (calendar in calendars) {
             container.addView(calendarBox(calendar.name, calendar.color, calendar.id in checked) { isChecked ->
                 if (isChecked) checked += calendar.id else checked -= calendar.id
@@ -95,10 +94,9 @@ class WidgetSettingsActivity : Activity() {
 
     /** A check box tinted with [color] as Google Calendar shows it. [update] changes the settings for a new state. */
     private fun calendarBox(name: String, color: Int, checked: Boolean, update: (Boolean) -> Unit) = CheckBox(this).apply {
-        val dark = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         text = name
         isChecked = checked
-        buttonTintList = ColorStateList.valueOf(GoogleColors.forDisplay(color, dark))
+        buttonTintList = ColorStateList.valueOf(GoogleColors.forDisplay(color, resources.configuration.isNightModeActive))
         setOnCheckedChangeListener { _, isChecked ->
             update(isChecked)
             showSettings()

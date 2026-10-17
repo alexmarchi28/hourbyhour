@@ -76,7 +76,7 @@ class CalendarSourceTest {
     fun readsTheIdsOfTheBirthdays() {
         val rows = listOf(mapOf(ExtendedProperties.EVENT_ID to 77L), mapOf(ExtendedProperties.EVENT_ID to 90L))
 
-        assertEquals(setOf(77L, 90L), CalendarSource.readEventIds(fakeCursor(CalendarSource.BIRTHDAY_COLUMNS, rows)))
+        assertEquals(listOf(77L, 90L), CalendarSource.readEventIds(fakeCursor(CalendarSource.BIRTHDAY_COLUMNS, rows)))
     }
 
     @Test

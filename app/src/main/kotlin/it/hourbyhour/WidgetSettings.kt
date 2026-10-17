@@ -27,10 +27,10 @@ data class WidgetSettings(
     val backgroundAlpha: Int get() = (255 * (100 - transparency) / 100f).roundToInt()
 
     /** Whether the widget shows the events of the calendar with [calendarId]. */
-    fun shows(calendarId: Long): Boolean = calendarIds == null || calendarId in calendarIds
+    fun showsCalendar(calendarId: Long): Boolean = calendarIds == null || calendarId in calendarIds
 
     /** Whether the widget shows [event]: birthdays follow their own choice, not their calendar's, as in Google Calendar. */
-    fun shows(event: CalendarEvent): Boolean = if (event.birthday) showBirthdays else shows(event.calendarId)
+    fun shows(event: CalendarEvent): Boolean = if (event.birthday) showBirthdays else showsCalendar(event.calendarId)
 
     /** Whether [startOnMonday] applies with this many days: with fewer days the widget always starts today. */
     val canStartOnMonday: Boolean get() = dayCount >= MIN_DAYS_FROM_MONDAY
