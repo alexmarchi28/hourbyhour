@@ -24,6 +24,12 @@ class GoogleColorsTest {
         assertDisplayed(0xFF5C93E5.toInt(), light = "#637FC4", dark = "#667FC2")
 
     @Test
+    fun birthdaysMatchGoogleCalendar() {
+        // Sampled from the birthday of a contact in Google Calendar, month view, dark theme.
+        assertEquals("#5AAF81", hex(GoogleColors.forDisplay(GoogleColors.BIRTHDAYS, dark = true)))
+    }
+
+    @Test
     fun oldCalendarAndEventColorsMapToTheCurrentPalette() {
         assertEquals("#616161", hex(GoogleColors.toCurrentPalette(0xFFC2C2C2.toInt())))
         assertEquals("#616161", hex(GoogleColors.toCurrentPalette(0xFFE1E1E1.toInt())))

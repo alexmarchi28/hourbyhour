@@ -1,12 +1,7 @@
 package it.hourbyhour
 
-import android.Manifest
-import android.content.ContentUris
 import android.content.ContentValues
-import android.net.Uri
-import android.provider.CalendarContract
 import android.provider.CalendarContract.Attendees
-import android.provider.CalendarContract.Calendars
 import android.provider.CalendarContract.Events
 import java.time.LocalDate
 import java.time.ZoneId
@@ -22,7 +17,6 @@ import org.junit.Test
  * the phone only (local calendars, never synced to Google) and removes afterwards.
  */
 class CalendarSourceDeviceTest {
-    private val resolver = targetContext.contentResolver
     private val zone = ZoneId.systemDefault()
 
     // A Monday far from the real events.
@@ -31,6 +25,7 @@ class CalendarSourceDeviceTest {
     private fun at(hour: Int, minute: Int = 0, plusDays: Long = 0) =
         day.plusDays(plusDays).atTime(hour, minute).atZone(zone).toInstant().toEpochMilli()
 
+    private lateinit var calendars: TestCalendars
     private var calendarA = 0L
     private var calendarB = 0L
     private var calendarZ = 0L
@@ -38,62 +33,21 @@ class CalendarSourceDeviceTest {
 
     @Before
     fun createCalendars() {
-        // The app may only read calendars: the test writes them as the adb shell.
-        instrumentation.uiAutomation.adoptShellPermissionIdentity(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)
-        // Calendars left by a test that crashed.
-        deleteTestCalendars()
+        calendars = TestCalendars()
         // A is hidden in the provider: the app ignores that flag, the widget settings decide.
-        calendarA = insertCalendar("HourByHour test A", COLOR_A, visible = false)
-        calendarB = insertCalendar("HourByHour test B", COLOR_B)
-        calendarZ = insertCalendar("HourByHour test Z", COLOR_B, primary = true)
-        notSynced = insertCalendar("HourByHour test not synced", COLOR_B, synced = false)
+        calendarA = calendars.insertCalendar("HourByHour test A", COLOR_A, visible = false)
+        calendarB = calendars.insertCalendar("HourByHour test B", COLOR_B)
+        calendarZ = calendars.insertCalendar("HourByHour test Z", COLOR_B, primary = true)
+        notSynced = calendars.insertCalendar("HourByHour test not synced", COLOR_B, synced = false)
     }
 
     @After
     fun deleteCalendars() {
-        deleteTestCalendars()
-        instrumentation.uiAutomation.dropShellPermissionIdentity()
+        if (::calendars.isInitialized) calendars.close()
     }
 
-    /** Deleting a calendar deletes its events too. */
-    private fun deleteTestCalendars() {
-        resolver.delete(asSyncAdapter(Calendars.CONTENT_URI), "${Calendars.ACCOUNT_NAME} = ?", arrayOf(ACCOUNT))
-    }
-
-    /** Calendars are created and filled as their sync adapter, the way Google Calendar fills its own. */
-    private fun asSyncAdapter(uri: Uri) = uri.buildUpon()
-        .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
-        .appendQueryParameter(Calendars.ACCOUNT_NAME, ACCOUNT)
-        .appendQueryParameter(Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL)
-        .build()
-
-    private fun insertCalendar(name: String, color: Int, synced: Boolean = true, visible: Boolean = true, primary: Boolean = false): Long {
-        val values = ContentValues().apply {
-            put(Calendars.ACCOUNT_NAME, ACCOUNT)
-            put(Calendars.ACCOUNT_TYPE, CalendarContract.ACCOUNT_TYPE_LOCAL)
-            put(Calendars.OWNER_ACCOUNT, ACCOUNT)
-            put(Calendars.NAME, name)
-            put(Calendars.CALENDAR_DISPLAY_NAME, name)
-            put(Calendars.CALENDAR_COLOR, color)
-            put(Calendars.CALENDAR_ACCESS_LEVEL, Calendars.CAL_ACCESS_OWNER)
-            put(Calendars.SYNC_EVENTS, if (synced) 1 else 0)
-            put(Calendars.VISIBLE, if (visible) 1 else 0)
-            put(Calendars.IS_PRIMARY, if (primary) 1 else 0)
-        }
-        return ContentUris.parseId(resolver.insert(asSyncAdapter(Calendars.CONTENT_URI), values)!!)
-    }
-
-    private fun insertEvent(calendar: Long, title: String?, begin: Long, end: Long, more: ContentValues.() -> Unit = {}): Long {
-        val values = ContentValues().apply {
-            put(Events.CALENDAR_ID, calendar)
-            put(Events.TITLE, title)
-            put(Events.DTSTART, begin)
-            put(Events.DTEND, end)
-            put(Events.EVENT_TIMEZONE, zone.id)
-            more()
-        }
-        return ContentUris.parseId(resolver.insert(asSyncAdapter(Events.CONTENT_URI), values)!!)
-    }
+    private fun insertEvent(calendar: Long, title: String?, begin: Long, end: Long, more: ContentValues.() -> Unit = {}) =
+        calendars.insertEvent(calendar, title, begin, end, more)
 
     /** The events the app reads from Monday to Thursday, from the test calendars only. */
     private fun load() = CalendarSource.load(targetContext, at(0), at(0, plusDays = 4))
@@ -118,10 +72,7 @@ class CalendarSourceDeviceTest {
     @Test
     fun allDayEventsAreReadAsAllDay() {
         val midnight = day.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-        insertEvent(calendarB, "Holiday", midnight, midnight + DAY) {
-            put(Events.ALL_DAY, 1)
-            put(Events.EVENT_TIMEZONE, "UTC")
-        }
+        calendars.insertAllDay(calendarB, "Holiday", day)
 
         val holiday = load().single()
         assertTrue(holiday.allDay)
@@ -185,6 +136,18 @@ class CalendarSourceDeviceTest {
     }
 
     @Test
+    fun birthdaysOfContactsAreMarkedAndTakeTheirColor() {
+        val birthday = calendars.insertAllDay(calendarB, "Gregorio", day)
+        calendars.markAsBirthday(birthday)
+        insertEvent(calendarB, "Dentist", at(10), at(11))
+
+        val events = load().associateBy { it.title }
+        assertEquals(true to GoogleColors.BIRTHDAYS, events.getValue("Gregorio").let { it.birthday to it.color })
+        assertEquals(false to opaque(COLOR_B), events.getValue("Dentist").let { it.birthday to it.color })
+        assertEquals(calendarB, events.getValue("Gregorio").calendarId)
+    }
+
+    @Test
     fun calendarsComePrimaryFirstThenByName() {
         val calendars = CalendarSource.loadCalendars(targetContext)
         val ours = calendars.filter { it.id in setOf(calendarA, calendarB, calendarZ) }
@@ -194,10 +157,8 @@ class CalendarSourceDeviceTest {
     }
 
     private companion object {
-        const val ACCOUNT = "hourbyhour-test"
         const val COLOR_A = 0x33B679
         const val COLOR_B = 0x039BE5
         const val EVENT_COLOR = 0xD50000
-        const val DAY = 24 * 60 * 60 * 1000L
     }
 }

@@ -1,13 +1,14 @@
 package it.hourbyhour
 
 import android.provider.CalendarContract.Calendars
+import android.provider.CalendarContract.ExtendedProperties
 import android.provider.CalendarContract.Instances
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class CalendarSourceTest {
-    private fun events(vararg rows: Map<String, Any?>) =
-        CalendarSource.readEvents(fakeCursor(CalendarSource.EVENT_COLUMNS, rows.toList()), untitled = "(Untitled)")
+    private fun events(vararg rows: Map<String, Any?>, birthdays: Set<Long> = emptySet()) =
+        CalendarSource.readEvents(fakeCursor(CalendarSource.EVENT_COLUMNS, rows.toList()), untitled = "(Untitled)", birthdays)
 
     private fun calendars(vararg rows: Map<String, Any?>) =
         CalendarSource.readCalendars(fakeCursor(CalendarSource.CALENDAR_COLUMNS, rows.toList()))
@@ -60,6 +61,22 @@ class CalendarSourceTest {
             .map { it.color }
 
         assertEquals(listOf(0xFF039BE5.toInt(), 0xFF039BE5.toInt()), colors)
+    }
+
+    @Test
+    fun birthdaysAreMarkedAndTakeTheirOwnColor() {
+        val (meeting, birthday) = events(eventRow(Instances.EVENT_ID to 76L), eventRow(Instances.EVENT_ID to 77L), birthdays = setOf(77L))
+
+        assertEquals(false to 0xFF039BE5.toInt(), meeting.birthday to meeting.color)
+        assertEquals(true to GoogleColors.BIRTHDAYS, birthday.birthday to birthday.color)
+        assertEquals(4L, birthday.calendarId)
+    }
+
+    @Test
+    fun readsTheIdsOfTheBirthdays() {
+        val rows = listOf(mapOf(ExtendedProperties.EVENT_ID to 77L), mapOf(ExtendedProperties.EVENT_ID to 90L))
+
+        assertEquals(setOf(77L, 90L), CalendarSource.readEventIds(fakeCursor(CalendarSource.BIRTHDAY_COLUMNS, rows)))
     }
 
     @Test
