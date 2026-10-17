@@ -19,6 +19,11 @@ data class CalendarEvent(
     val calendarId: Long = 0,
     /** The event in the calendar provider; occurrences of a recurring event share it. */
     val eventId: Long = 0,
+    /**
+     * A birthday of a contact, which Google Calendar puts in the primary calendar but shows as a
+     * calendar of its own ("Birthdays"), with its own color.
+     */
+    val birthday: Boolean = false,
 )
 
 /** A calendar of the phone whose events are synced, as offered in the widget settings. */
@@ -40,7 +45,7 @@ data class Snapshot(val days: List<Day>, val now: ZonedDateTime)
 data class Agenda(val events: List<CalendarEvent>, val now: ZonedDateTime) {
     fun snapshot(settings: WidgetSettings): Snapshot {
         val firstDay = settings.firstDay(now.toLocalDate())
-        val shown = events.filter { settings.shows(it.calendarId) }
+        val shown = events.filter { settings.shows(it) }
         return Snapshot(splitIntoDays(shown, firstDay, settings.dayCount, now.zone), now)
     }
 

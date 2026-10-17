@@ -17,6 +17,8 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
         startOnMonday = preferences.getBoolean(startOnMondayKey(widgetId), false),
         // No saved set means all calendars. The set from preferences must not be modified: copy it.
         calendarIds = preferences.getStringSet(calendarsKey(widgetId), null)?.mapNotNull { it.toLongOrNull() }?.toSet(),
+        // Widgets saved before birthdays could be chosen show them, like every calendar at first.
+        showBirthdays = preferences.getBoolean(birthdaysKey(widgetId), true),
     )
 
     fun save(widgetId: Int, settings: WidgetSettings) {
@@ -24,6 +26,7 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
             .putInt(transparencyKey(widgetId), settings.transparency)
             .putInt(dayCountKey(widgetId), settings.dayCount)
             .putBoolean(startOnMondayKey(widgetId), settings.startOnMonday)
+            .putBoolean(birthdaysKey(widgetId), settings.showBirthdays)
         val calendarIds = settings.calendarIds
         if (calendarIds == null) {
             editor.remove(calendarsKey(widgetId))
@@ -37,7 +40,7 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
     fun delete(widgetIds: IntArray) {
         val editor = preferences.edit()
         for (id in widgetIds) {
-            editor.remove(transparencyKey(id)).remove(dayCountKey(id)).remove(startOnMondayKey(id)).remove(calendarsKey(id))
+            for (key in keys(id)) editor.remove(key)
         }
         editor.apply()
     }
@@ -46,6 +49,10 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
     private fun dayCountKey(widgetId: Int) = "days_$widgetId"
     private fun startOnMondayKey(widgetId: Int) = "from_monday_$widgetId"
     private fun calendarsKey(widgetId: Int) = "calendars_$widgetId"
+    private fun birthdaysKey(widgetId: Int) = "birthdays_$widgetId"
+
+    private fun keys(widgetId: Int) =
+        listOf(transparencyKey(widgetId), dayCountKey(widgetId), startOnMondayKey(widgetId), calendarsKey(widgetId), birthdaysKey(widgetId))
 
     companion object {
         const val FILE_NAME = "widget_settings"

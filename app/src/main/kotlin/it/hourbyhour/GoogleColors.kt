@@ -22,6 +22,12 @@ object GoogleColors {
     fun forDisplay(providerColor: Int, dark: Boolean): Int = adaptToTheme(toCurrentPalette(providerColor), dark)
 
     /**
+     * The color of birthdays, as the calendar provider would give it. Google Calendar keeps it in its
+     * own settings, out of reach of other apps: this is its default (sage), measured on a screenshot.
+     */
+    val BIRTHDAYS: Int = OPAQUE or SAGE
+
+    /**
      * Maps an old palette color to the current one. Colors already in the current palette are kept;
      * custom colors that are too bright get darker and more saturated, as Google Calendar does.
      */

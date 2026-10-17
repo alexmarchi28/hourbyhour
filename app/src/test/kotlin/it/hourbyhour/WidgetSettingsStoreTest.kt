@@ -9,7 +9,7 @@ class WidgetSettingsStoreTest {
     private val preferences = FakeSharedPreferences()
     private val store = WidgetSettingsStore(preferences)
 
-    private val custom = WidgetSettings(transparency = 40, dayCount = 6, startOnMonday = true, calendarIds = setOf(3L, 12L))
+    private val custom = WidgetSettings(transparency = 40, dayCount = 6, startOnMonday = true, calendarIds = setOf(3L, 12L), showBirthdays = false)
 
     @Test
     fun widgetWithoutSavedSettingsGetsTheDefaults() {
@@ -35,7 +35,7 @@ class WidgetSettingsStoreTest {
         // Widgets already on the home screen keep their settings only if the keys do not change.
         store.save(7, custom)
 
-        assertEquals(setOf("transparency_7", "days_7", "from_monday_7", "calendars_7"), preferences.all.keys)
+        assertEquals(setOf("transparency_7", "days_7", "from_monday_7", "calendars_7", "birthdays_7"), preferences.all.keys)
         assertEquals(setOf("3", "12"), preferences.getStringSet("calendars_7", null))
     }
 
@@ -63,7 +63,14 @@ class WidgetSettingsStoreTest {
 
         store.delete(intArrayOf(7, 9))
 
-        assertEquals(setOf("transparency_8", "days_8", "from_monday_8", "calendars_8"), preferences.all.keys)
+        assertEquals(setOf("transparency_8", "days_8", "from_monday_8", "calendars_8", "birthdays_8"), preferences.all.keys)
+    }
+
+    @Test
+    fun widgetsSavedBeforeBirthdaysCouldBeChosenShowThem() {
+        preferences.edit().putInt("days_7", 5).putStringSet("calendars_7", setOf("3")).apply()
+
+        assertEquals(WidgetSettings(dayCount = 5, calendarIds = setOf(3L), showBirthdays = true), store.load(7))
     }
 
     @Test

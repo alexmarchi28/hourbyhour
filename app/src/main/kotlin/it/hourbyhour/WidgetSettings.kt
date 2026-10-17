@@ -15,6 +15,8 @@ data class WidgetSettings(
     val startOnMonday: Boolean = false,
     /** The calendars to show, by provider id; null shows them all, including calendars added later. */
     val calendarIds: Set<Long>? = null,
+    /** Show birthdays, which are a calendar of their own in Google Calendar (see [CalendarEvent.birthday]). */
+    val showBirthdays: Boolean = true,
 ) {
     init {
         require(transparency in 0..100) { "Transparency must be between 0 and 100, not $transparency" }
@@ -26,6 +28,9 @@ data class WidgetSettings(
 
     /** Whether the widget shows the events of the calendar with [calendarId]. */
     fun shows(calendarId: Long): Boolean = calendarIds == null || calendarId in calendarIds
+
+    /** Whether the widget shows [event]: birthdays follow their own choice, not their calendar's, as in Google Calendar. */
+    fun shows(event: CalendarEvent): Boolean = if (event.birthday) showBirthdays else shows(event.calendarId)
 
     /** Whether [startOnMonday] applies with this many days: with fewer days the widget always starts today. */
     val canStartOnMonday: Boolean get() = dayCount >= MIN_DAYS_FROM_MONDAY

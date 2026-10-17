@@ -109,6 +109,22 @@ class WidgetSettingsTest {
         assertFalse(settings.shows(5))
     }
 
+    private val birthday = CalendarEvent("Gregorio", 0, 0, true, 0, calendarId = 2, birthday = true)
+
+    @Test
+    fun birthdaysAreShownByDefault() {
+        assertTrue(WidgetSettings().shows(birthday))
+        assertTrue(WidgetSettings(calendarIds = setOf(6)).shows(birthday))
+    }
+
+    @Test
+    fun birthdaysFollowTheirOwnChoiceNotTheirCalendar() {
+        // Like in Google Calendar, they belong to the primary calendar but are chosen apart.
+        assertFalse(WidgetSettings(showBirthdays = false).shows(birthday))
+        assertTrue(WidgetSettings(calendarIds = setOf(6), showBirthdays = true).shows(birthday))
+        assertTrue(WidgetSettings(showBirthdays = false).shows(birthday.copy(birthday = false)))
+    }
+
     @Test
     fun checkingEveryCalendarMeansAllCalendars() {
         assertEquals(null, WidgetSettings.calendarSelection(setOf(2, 5, 6), listOf(2, 5, 6)))

@@ -254,4 +254,20 @@ class TimelineTest {
         assertEquals(listOf("Ferie"), workOnly.allDay.map { it.title })
         assertEquals(setOf("Riunione", "Arrampicata"), everything.timed.map { it.event.title }.toSet())
     }
+
+    @Test
+    fun agendaSnapshotShowsBirthdaysAsTheirOwnCalendar() {
+        val now = LocalDateTime.of(2026, 10, 12, 8, 0).atZone(zone)
+        val meeting = timed("Riunione", at(12, 9), at(12, 10)).copy(calendarId = 2)
+        val birthday = allDay("Gregorio", 12, 12).copy(calendarId = 2, birthday = true)
+        val agenda = Agenda(listOf(meeting, birthday), now)
+
+        val noBirthdays = agenda.snapshot(WidgetSettings(showBirthdays = false)).days[0]
+        val onlyBirthdays = agenda.snapshot(WidgetSettings(calendarIds = emptySet())).days[0]
+
+        assertEquals(listOf("Riunione"), noBirthdays.timed.map { it.event.title })
+        assertEquals(emptyList<CalendarEvent>(), noBirthdays.allDay)
+        assertEquals(emptyList<Segment>(), onlyBirthdays.timed)
+        assertEquals(listOf("Gregorio"), onlyBirthdays.allDay.map { it.title })
+    }
 }
