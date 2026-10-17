@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.widget.TextView
 import java.time.LocalDate
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -76,6 +77,30 @@ class WidgetDeviceTest {
         resize(100)
         // Too narrow for the weekday: only the day of the month.
         waitFor("only dates") { headers().first().text.all { it.isDigit() } }
+    }
+
+    /** The all-day chip titled [title], if the widget shows it. */
+    private fun chip(title: String) =
+        view.descendants().filterIsInstance<TextView>().firstOrNull { it.id == R.id.banner_chip && it.text == title }
+
+    @Test
+    fun birthdaysShowInTheirOwnColorAndCanBeHidden() {
+        TestCalendars().use { calendars ->
+            val calendar = calendars.insertCalendar("HourByHour test", 0x039BE5)
+            calendars.markAsBirthday(calendars.insertAllDay(calendar, "Test birthday", LocalDate.now()))
+            // No calendar chosen: birthdays are chosen apart.
+            store.save(widget.id, WidgetSettings(calendarIds = emptySet()))
+            WidgetUpdater.update(targetContext, manager, intArrayOf(widget.id))
+
+            waitFor("the birthday") { chip("Test birthday") != null }
+            val dark = targetContext.resources.configuration.isNightModeActive
+            assertEquals(GoogleColors.forDisplay(GoogleColors.BIRTHDAYS, dark), onMain { chip("Test birthday")!!.backgroundTintList!!.defaultColor })
+
+            store.save(widget.id, WidgetSettings(calendarIds = emptySet(), showBirthdays = false))
+            WidgetUpdater.update(targetContext, manager, intArrayOf(widget.id))
+
+            waitFor("the birthday to go") { chip("Test birthday") == null }
+        }
     }
 
     @Test
