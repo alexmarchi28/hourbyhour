@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
-import android.graphics.Rect
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
@@ -144,11 +143,6 @@ class WidgetViewsDeviceTest {
         assertEquals("Call", compact.text.toString())
         assertEquals(TextView.AUTO_SIZE_TEXT_TYPE_UNIFORM, compact.autoSizeTextType)
         assertEquals("", none.text.toString())
-    }
-
-    /** Where [view] is inside [ancestor], in pixels. */
-    private fun rectIn(ancestor: View, view: View) = Rect(0, 0, view.width, view.height).also {
-        (ancestor as ViewGroup).offsetDescendantRectToMyCoords(view, it)
     }
 
     @Test

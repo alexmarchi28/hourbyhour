@@ -3,6 +3,7 @@ package it.hourbyhour
 import android.app.Instrumentation
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Rect
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
@@ -46,6 +47,11 @@ fun waitFor(what: String, timeoutMillis: Long = 10_000, condition: () -> Boolean
         if (SystemClock.uptimeMillis() > deadline) throw AssertionError("Timed out waiting for $what")
         Thread.sleep(50)
     }
+}
+
+/** Where [view] is inside [ancestor], in pixels. Unlike getLocationInWindow, it works on views outside a window. */
+fun rectIn(ancestor: View, view: View) = Rect(0, 0, view.width, view.height).also {
+    (ancestor as ViewGroup).offsetDescendantRectToMyCoords(view, it)
 }
 
 /** [this] and all the views inside it. */
