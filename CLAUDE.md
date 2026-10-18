@@ -194,6 +194,7 @@ Rigenerale quando cambia l'aspetto del widget, e guardale prima di committarle.
 
 - Lavora su un **branch per funzionalità** (es. `feat/eventi-cliccabili`), non direttamente su `main`.
 - **Commit piccoli e atomici**, con build, test e lint che passano.
+- Ogni PR e ogni push su `main` passano dalla **CI** (`.github/workflows/ci.yml`, GitHub Actions): build, test sulla JVM e lint, con i report scaricabili dalla pagina della run. I test sul telefono restano fuori dalla CI e vanno eseguiti a mano. Una PR entra solo con la CI verde.
 - Messaggi in inglese, all'imperativo: titolo ≤ 72 caratteri, riga vuota, poi il *perché* se non è ovvio.
 
 ## Fuori scope per ora (non implementare senza richiesta esplicita)
