@@ -26,6 +26,11 @@ class WidgetSettingsActivity : Activity() {
     private lateinit var transparencyValue: TextView
     private lateinit var dayCountValue: TextView
     private lateinit var startOnMonday: Switch
+    private lateinit var customHours: Switch
+    private lateinit var hoursFrom: SeekBar
+    private lateinit var hoursTo: SeekBar
+    private lateinit var hoursFromValue: TextView
+    private lateinit var hoursToValue: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +48,8 @@ class WidgetSettingsActivity : Activity() {
         preview = WidgetPreview(this, findViewById(R.id.preview))
         transparencyValue = findViewById(R.id.transparency_value)
         dayCountValue = findViewById(R.id.day_count_value)
+        hoursFromValue = findViewById(R.id.hours_from_value)
+        hoursToValue = findViewById(R.id.hours_to_value)
 
         findViewById<SeekBar>(R.id.transparency).apply {
             max = 100 / WidgetSettings.TRANSPARENCY_STEP
@@ -60,6 +67,25 @@ class WidgetSettingsActivity : Activity() {
                 settings = settings.copy(startOnMonday = checked)
                 showSettings()
             }
+        }
+        customHours = findViewById<Switch>(R.id.custom_hours).apply {
+            isChecked = settings.customHours
+            setOnCheckedChangeListener { _, checked ->
+                settings = settings.copy(customHours = checked)
+                showSettings()
+            }
+        }
+        // Each bar keeps the other one on its side: the hours span at least one hour.
+        hoursFrom = findViewById<SeekBar>(R.id.hours_from).apply {
+            max = 23
+            progress = settings.hours.start
+            onProgress { settings = settings.copy(hours = settings.hours.startingAt(it)) }
+        }
+        hoursTo = findViewById<SeekBar>(R.id.hours_to).apply {
+            max = 24
+            min = 1
+            progress = settings.hours.end
+            onProgress { settings = settings.copy(hours = settings.hours.endingAt(it)) }
         }
         findViewById<Button>(R.id.done).setOnClickListener { save() }
         showSettings()
@@ -114,6 +140,13 @@ class WidgetSettingsActivity : Activity() {
         dayCountValue.text = getString(R.string.day_count_value, settings.dayCount)
         // The choice is kept below five days, but has no effect there.
         startOnMonday.isEnabled = settings.canStartOnMonday
+        hoursFromValue.text = getString(R.string.hour_value, settings.hours.start)
+        hoursToValue.text = getString(R.string.hour_value, settings.hours.end)
+        // Moving one bar may move the other; the chosen hours are kept while custom hours are off.
+        hoursFrom.progress = settings.hours.start
+        hoursTo.progress = settings.hours.end
+        hoursFrom.isEnabled = settings.customHours
+        hoursTo.isEnabled = settings.customHours
         preview.settings = settings
     }
 

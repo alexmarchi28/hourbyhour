@@ -22,6 +22,11 @@
     <string name="day_count_value" translatable="false">%1$d</string>
     <string name="start_on_monday">Start on Monday</string>
     <string name="start_on_monday_hint">With 5 days or more: shows the week from Monday. Once the chosen days are over, shows the next week.</string>
+    <string name="custom_hours">Custom hours</string>
+    <string name="custom_hours_hint">Shows at least these hours. An event outside them widens the grid, so none is hidden. When off, the hours fit the events.</string>
+    <string name="hours_from_label">From</string>
+    <string name="hours_to_label">To</string>
+    <string name="hour_value" translatable="false">%1$d:00</string>
     <string name="calendars_label">Calendars</string>
     <string name="calendars_hint">If you just created a calendar and it is not here, open Google Calendar and tap Refresh in its menu: the phone downloads new calendars only now and then.</string>
     <string name="birthdays">Birthdays</string>

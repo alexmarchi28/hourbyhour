@@ -18,6 +18,10 @@
     <string name="day_count_label">Numero di giorni</string>
     <string name="start_on_monday">Inizia da lunedì</string>
     <string name="start_on_monday_hint">Con 5 giorni o più: mostra la settimana da lunedì. Quando i giorni scelti sono passati, mostra la settimana successiva.</string>
+    <string name="custom_hours">Fascia oraria personalizzata</string>
+    <string name="custom_hours_hint">Mostra almeno queste ore. Un evento fuori fascia allarga la griglia, così nessuno resta nascosto. Se è spenta, le ore si adattano agli eventi.</string>
+    <string name="hours_from_label">Dalle</string>
+    <string name="hours_to_label">Alle</string>
     <string name="calendars_label">Calendari</string>
     <string name="calendars_hint">Se hai appena creato un calendario e non lo vedi qui, apri Google Calendar e tocca Aggiorna nel menu: il telefono scarica i calendari nuovi solo di tanto in tanto.</string>
     <string name="birthdays">Compleanni</string>

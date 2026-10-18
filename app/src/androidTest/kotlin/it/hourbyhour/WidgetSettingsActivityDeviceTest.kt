@@ -109,6 +109,66 @@ class WidgetSettingsActivityDeviceTest {
     }
 
     @Test
+    fun hoursFitTheEventsUntilCustomHoursAreTurnedOn() {
+        open().use { scenario ->
+            assertFalse(scenario.read { it.findViewById<Switch>(R.id.custom_hours).isChecked })
+            assertFalse(scenario.read { it.findViewById<SeekBar>(R.id.hours_from).isEnabled })
+            assertFalse(scenario.read { it.findViewById<SeekBar>(R.id.hours_to).isEnabled })
+            assertEquals("8:00", scenario.text(R.id.hours_from_value))
+            assertEquals("20:00", scenario.text(R.id.hours_to_value))
+
+            scenario.onActivity { it.findViewById<View>(R.id.custom_hours).performClick() }
+
+            assertTrue(scenario.read { it.findViewById<SeekBar>(R.id.hours_from).isEnabled })
+            assertTrue(scenario.read { it.findViewById<SeekBar>(R.id.hours_to).isEnabled })
+        }
+    }
+
+    @Test
+    fun showsTheSavedHours() {
+        store.save(widget.id, WidgetSettings(customHours = true, hours = HourRange(7, 19)))
+
+        open().use { scenario ->
+            assertTrue(scenario.read { it.findViewById<Switch>(R.id.custom_hours).isChecked })
+            assertEquals("7:00", scenario.text(R.id.hours_from_value))
+            assertEquals("19:00", scenario.text(R.id.hours_to_value))
+            assertEquals(7, scenario.read { it.findViewById<SeekBar>(R.id.hours_from).progress })
+            assertEquals(19, scenario.read { it.findViewById<SeekBar>(R.id.hours_to).progress })
+        }
+    }
+
+    @Test
+    fun theEndStaysAfterTheStart() {
+        store.save(widget.id, WidgetSettings(customHours = true))
+
+        open().use { scenario ->
+            scenario.slide(R.id.hours_from, 21)
+
+            assertEquals("21:00", scenario.text(R.id.hours_from_value))
+            assertEquals("22:00", scenario.text(R.id.hours_to_value))
+            assertEquals(22, scenario.read { it.findViewById<SeekBar>(R.id.hours_to).progress })
+
+            scenario.slide(R.id.hours_to, 6)
+
+            assertEquals("5:00", scenario.text(R.id.hours_from_value))
+            assertEquals(5, scenario.read { it.findViewById<SeekBar>(R.id.hours_from).progress })
+        }
+    }
+
+    @Test
+    fun chosenHoursAreSaved() {
+        open().use { scenario ->
+            scenario.onActivity { it.findViewById<View>(R.id.custom_hours).performClick() }
+            scenario.slide(R.id.hours_from, 7)
+            scenario.slide(R.id.hours_to, 19)
+            scenario.onActivity { it.findViewById<View>(R.id.done).performClick() }
+
+            assertEquals(Activity.RESULT_OK, scenario.result.resultCode)
+        }
+        assertEquals(WidgetSettings(customHours = true, hours = HourRange(7, 19)), store.load(widget.id))
+    }
+
+    @Test
     fun calendarsAreAllCheckedAtFirst() {
         open().use { scenario ->
             val boxes = scenario.calendarBoxes()
