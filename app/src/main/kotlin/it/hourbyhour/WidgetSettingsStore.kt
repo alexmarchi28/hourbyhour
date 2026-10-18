@@ -7,10 +7,10 @@ import android.content.SharedPreferences
  * Keeps the [WidgetSettings] of each widget on the home screen, by widget id. The file and key names
  * are the saved format: renaming them loses the settings of the widgets already on the home screen.
  */
-class WidgetSettingsStore(private val preferences: SharedPreferences) {
+class WidgetSettingsStore(private val preferences: SharedPreferences) : SettingsRepository {
     constructor(context: Context) : this(context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE))
 
-    fun load(widgetId: Int) = WidgetSettings(
+    override fun load(widgetId: Int) = WidgetSettings(
         transparency = preferences.getInt(transparencyKey(widgetId), WidgetSettings.DEFAULT_TRANSPARENCY)
             .coerceIn(WidgetSettings.TRANSPARENCY_RANGE),
         dayCount = preferences.getInt(dayCountKey(widgetId), WidgetSettings.DEFAULT_DAY_COUNT).coerceIn(WidgetSettings.DAY_COUNT_RANGE),
@@ -32,7 +32,7 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
         return HourRange(start, end).startingAt(start)
     }
 
-    fun save(widgetId: Int, settings: WidgetSettings) {
+    override fun save(widgetId: Int, settings: WidgetSettings) {
         val editor = preferences.edit()
             .putInt(transparencyKey(widgetId), settings.transparency)
             .putInt(dayCountKey(widgetId), settings.dayCount)
@@ -54,7 +54,7 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
      * Forgets the settings of widgets removed from the home screen: every key ending with `_<id>`,
      * including keys this version no longer writes.
      */
-    fun delete(widgetIds: IntArray) {
+    override fun delete(widgetIds: IntArray) {
         val editor = preferences.edit()
         for (key in preferences.all.keys) {
             val id = key.substringAfterLast('_').toIntOrNull() ?: continue

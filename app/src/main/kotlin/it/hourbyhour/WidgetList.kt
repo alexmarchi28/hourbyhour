@@ -17,14 +17,15 @@ import kotlin.concurrent.thread
  */
 class WidgetList(private val activity: Activity, private val section: View, private val list: ViewGroup) {
     private val context = activity.applicationContext
+    private val services = AppServices(context)
 
     /** Reads the widgets and the calendars again, off the main thread, and shows them. */
     fun reload() {
         thread {
             val ids = AppWidgetManager.getInstance(context).getAppWidgetIds(ComponentName(context, HourByHourWidget::class.java))
-            val calendars = if (CalendarSource.hasPermission(context)) CalendarSource.loadCalendars(context).map { it.id }.toSet() else null
-            val store = WidgetSettingsStore(context)
-            val entries = widgetEntries(ids, store::load, calendars)
+            val events = services.events
+            val calendars = if (events.hasPermission()) events.calendars().map { it.id }.toSet() else null
+            val entries = widgetEntries(ids, services.settings::load, calendars)
             activity.runOnUiThread { if (!activity.isDestroyed) show(entries) }
         }
     }

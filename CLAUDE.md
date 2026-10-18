@@ -47,11 +47,13 @@ EventColors.kt        logica pura, testata su JVM: colori di riempimento e testo
 WidgetSettings.kt     logica pura, testata su JVM: impostazioni di un widget (trasparenza, numero di giorni, partenza da lunedì, calendari, fascia oraria)
 SampleAgenda.kt       logica pura, testata su JVM: una settimana di eventi inventati (selettore dei widget e scheda dello store)
 WidgetSummary.kt      logica pura, testata su JVM: descrizione breve di ogni widget e numerazione, per l'elenco nell'app
+WidgetRefresh.kt      logica pura, testata su JVM: cosa mostra ogni widget (una lettura del calendario per tutti), interfacce EventSource e SettingsRepository
+AppServices.kt        il punto unico che costruisce le implementazioni vere (PhoneCalendar, WidgetSettingsStore, orologio di sistema)
 WidgetSettingsStore.kt  salva le impostazioni per id del widget (SharedPreferences), cancellate in onDeleted
 WidgetSettingsActivity.kt  schermata impostazioni di un widget, aperta dal launcher, con anteprima sopra lo sfondo della Home
-CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse) e sull'elenco dei calendari
+CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse) e sull'elenco dei calendari; PhoneCalendar è l'EventSource vero
 WidgetViews.kt        traduce un WidgetLayout in RemoteViews, senza prendere decisioni
-WidgetUpdater.kt      carica gli eventi, aggiorna i widget, programma il prossimo aggiornamento
+WidgetUpdater.kt      guscio Android di WidgetRefresh: misura i widget, li disegna, programma il prossimo aggiornamento
 HourByHourWidget.kt   AppWidgetProvider: aggiunta, ridimensionamento, cambi di ora/fuso/lingua
 CalendarChangeJob.kt  JobService con trigger sul content URI del calendario
 MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", anteprima del widget, elenco dei widget sulla Home
@@ -61,7 +63,7 @@ WidgetPickerPreview.kt  anteprima nel selettore dei widget del launcher, con gli
 CalendarIntents.kt    intent che aprono l'app calendario su un evento o un giorno
 ```
 
-`CalendarEvent.kt`, `Agenda.kt`, `Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt`, `WidgetSettings.kt`, `SampleAgenda.kt` e `WidgetSummary.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni e la fascia oraria di ogni widget) → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
+`CalendarEvent.kt`, `Agenda.kt`, `Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt`, `WidgetSettings.kt`, `SampleAgenda.kt`, `WidgetSummary.kt` e `WidgetRefresh.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `EventSource` (`PhoneCalendar` → `CalendarSource`) → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni e la fascia oraria di ogni widget) → `layoutWidget` → `WidgetContent` (`WidgetRefresh`) → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
 
 Il calendario si legge **una volta** per due settimane da lunedì (`Agenda.DAYS`, `Agenda.window`), una finestra che copre ogni impostazione possibile (fino a 7 giorni da oggi, o la settimana da lunedì, questa o la prossima); ogni widget e l'anteprima ne prendono i propri giorni senza rileggere il calendario. La fascia oraria si calcola solo sui giorni mostrati.
 
@@ -158,7 +160,7 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 - I test girano sulla JVM, dove le classi Android esistono solo come stub che lanciano eccezioni. Per testare codice che tocca Android:
   - le decisioni stanno in funzioni senza tipi Android, anche dentro i file Android: `nextRefreshTime` ed `estimatedSize` (`WidgetUpdater.kt`), `calendarUri` (`CalendarIntents.kt`), `spanWeightSums` (`WidgetViews.kt`);
   - l'ora arriva da un `java.time.Clock` (`Agenda.read`, `WidgetUpdater.update`, `WidgetPickerPreview.publishIfNeeded`), predefinito quello di sistema: nei test si usa `Clock.fixed`;
-  - le interfacce Android si sostituiscono con finti in memoria: `FakeSharedPreferences` per `WidgetSettingsStore`, `fakeCursor` per le righe lette da `CalendarSource` (ha solo le colonne della query, come il provider).
+  - le interfacce Android si sostituiscono con finti in memoria: `FakeSharedPreferences` per `WidgetSettingsStore`, `fakeCursor` per le righe lette da `CalendarSource` (ha solo le colonne della query, come il provider), `EventSource` e `SettingsRepository` finti per `WidgetRefresh` (`WidgetRefreshTest`: permesso negato, una lettura per tutti i widget, un widget che fallisce).
 - Il resto si prova sul telefono, con i test in `app/src/androidTest` (girano nel processo dell'app):
   - `WidgetViewsDeviceTest`: le RemoteViews applicate, misurate e disposte come in un launcher (posizioni, titoli, intestazioni, tocchi). I tocchi mandano broadcast di prova invece di aprire il calendario.
   - `CalendarSourceDeviceTest`: le query sul provider (`SELECTION`, ordine, finestra, compleanni) su calendari locali creati e cancellati da `TestCalendars`. Il permesso di scrittura lo prende in prestito dalla shell adb (`adoptShellPermissionIdentity`): l'app resta con il solo `READ_CALENDAR`.
@@ -172,7 +174,7 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 ## Convenzioni
 
 - Identificatori, commenti e messaggi di commit in **inglese**. Testi mostrati all'utente in **inglese** (`values/strings.xml`, la lingua predefinita) e **italiano** (`values-it/strings.xml`): ogni testo nuovo va in entrambi.
-- Niente stato globale: gli `object` (`WidgetUpdater`, `CalendarSource`) non hanno stato.
+- Niente stato globale: gli `object` (`WidgetUpdater`, `CalendarSource`) non hanno stato. Le dipendenze Android (calendario, impostazioni, orologio) arrivano da `AppServices`, costruito dove serve (provider, job, schermate), mai da singleton; niente framework di dependency injection.
 - Lettura del calendario e costruzione del widget fuori dal main thread (`goAsync` nel provider, thread nel job e in `WidgetPreview`).
 
 ## Pubblicazione su Google Play

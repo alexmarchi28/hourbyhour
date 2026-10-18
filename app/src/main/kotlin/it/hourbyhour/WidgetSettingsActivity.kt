@@ -20,7 +20,7 @@ import kotlin.concurrent.thread
  */
 class WidgetSettingsActivity : Activity() {
     private var widgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-    private lateinit var store: WidgetSettingsStore
+    private lateinit var services: AppServices
     private lateinit var settings: WidgetSettings
     private lateinit var preview: WidgetPreview
     private lateinit var transparencyValue: TextView
@@ -43,8 +43,8 @@ class WidgetSettingsActivity : Activity() {
         }
 
         setContentView(R.layout.activity_widget_settings)
-        store = WidgetSettingsStore(this)
-        settings = store.load(widgetId)
+        services = AppServices(this)
+        settings = services.settings.load(widgetId)
         preview = WidgetPreview(this, findViewById(R.id.preview))
         transparencyValue = findViewById(R.id.transparency_value)
         dayCountValue = findViewById(R.id.day_count_value)
@@ -92,9 +92,9 @@ class WidgetSettingsActivity : Activity() {
         showSettings()
         preview.reload()
 
-        val context = applicationContext
+        val events = services.events
         thread {
-            val calendars = if (CalendarSource.hasPermission(context)) CalendarSource.loadCalendars(context) else emptyList()
+            val calendars = if (events.hasPermission()) events.calendars() else emptyList()
             runOnUiThread { if (!isDestroyed) showCalendars(calendars) }
         }
     }
@@ -166,7 +166,7 @@ class WidgetSettingsActivity : Activity() {
     }
 
     private fun save() {
-        store.save(widgetId, settings)
+        services.settings.save(widgetId, settings)
         HourByHourWidget.redraw(applicationContext, intArrayOf(widgetId))
         setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId))
         finish()
