@@ -28,6 +28,9 @@ fun blend(from: Int, to: Int, ratio: Float): Int {
     return OPAQUE or (channel(16) shl 16) or (channel(8) shl 8) or channel(0)
 }
 
+/** [color] with its alpha channel replaced by [alpha] (0-255). */
+fun withAlpha(color: Int, alpha: Int): Int = (color and 0xFFFFFF) or (alpha.coerceIn(0, 255) shl 24)
+
 /** Relative luminance of an sRGB color, as android.graphics.Color.luminance computes it. */
 private fun luminance(color: Int): Double {
     fun linear(channel: Int): Double {

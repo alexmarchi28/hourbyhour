@@ -31,13 +31,6 @@ class WidgetSettingsTest {
         WidgetSettings(-5)
     }
 
-    @Test
-    fun withAlphaReplacesOnlyTheAlphaChannel() {
-        assertEquals(0x80202124.toInt(), withAlpha(0xFF202124.toInt(), 0x80))
-        assertEquals(0x00FFFFFF, withAlpha(0xFFFFFFFF.toInt(), 0))
-        assertEquals(0xFF123456.toInt(), withAlpha(0x00123456, 300))
-    }
-
     // October 2026: Monday 12 to Sunday 18, then Monday 19.
     private fun october(day: Int) = LocalDate.of(2026, 10, day)
 

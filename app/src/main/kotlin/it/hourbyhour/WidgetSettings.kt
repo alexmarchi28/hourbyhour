@@ -1,8 +1,6 @@
 package it.hourbyhour
 
-import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.temporal.TemporalAdjusters
 import kotlin.math.roundToInt
 
 /** The preferences of one widget, chosen in WidgetSettingsActivity. */
@@ -55,7 +53,7 @@ data class WidgetSettings(
      */
     fun firstDay(today: LocalDate): LocalDate {
         if (!startsOnMonday) return today
-        val monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+        val monday = mondayOf(today)
         return if (today.isAfter(monday.plusDays(dayCount - 1L))) monday.plusWeeks(1) else monday
     }
 
@@ -78,7 +76,7 @@ data class WidgetSettings(
         val HOURS_RANGE = 0..24
 
         /** The hours the widget shows without events, offered when custom hours are turned on. */
-        val DEFAULT_HOURS = HourRange(8, 20)
+        val DEFAULT_HOURS = HourRange.WITHOUT_EVENTS
 
         /** The fewest days that can start from Monday: Monday to Friday. */
         const val MIN_DAYS_FROM_MONDAY = 5
@@ -91,6 +89,3 @@ data class WidgetSettings(
             if (checked.containsAll(available)) null else checked
     }
 }
-
-/** [color] with its alpha channel replaced by [alpha] (0-255). */
-fun withAlpha(color: Int, alpha: Int): Int = (color and 0xFFFFFF) or (alpha.coerceIn(0, 255) shl 24)

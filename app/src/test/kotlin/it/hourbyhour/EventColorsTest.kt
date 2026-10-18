@@ -50,4 +50,11 @@ class EventColorsTest {
         assertEquals("#FF404040", hex(blend(0xFF000000.toInt(), 0xFF808080.toInt(), 0.5f)))
         assertEquals("#FF808080", hex(blend(0xFF000000.toInt(), 0xFF808080.toInt(), 1f)))
     }
+
+    @Test
+    fun withAlphaReplacesOnlyTheAlphaChannel() {
+        assertEquals(0x80202124.toInt(), withAlpha(0xFF202124.toInt(), 0x80))
+        assertEquals(0x00FFFFFF, withAlpha(0xFFFFFFFF.toInt(), 0))
+        assertEquals(0xFF123456.toInt(), withAlpha(0x00123456, 300))
+    }
 }
