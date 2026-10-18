@@ -51,4 +51,26 @@
     <string name="preview_day_1">Mon 12</string>
     <string name="preview_day_2">Tue 13</string>
     <string name="preview_day_3">Wed 14</string>
+
+    <!-- The widgets on the home screen, listed in the app (WidgetList). -->
+    <string name="your_widgets">Your widgets</string>
+    <string name="your_widgets_hint">Tap a widget to change its settings.</string>
+    <string name="widget_number">Widget %1$d</string>
+    <string name="summary_separator" translatable="false">" · "</string>
+    <plurals name="summary_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <!-- Always 5 to 7 days, but a plural for the languages that need one. -->
+    <plurals name="summary_days_from_monday">
+        <item quantity="one">%d day from Monday</item>
+        <item quantity="other">%d days from Monday</item>
+    </plurals>
+    <plurals name="summary_calendars">
+        <item quantity="one">%d calendar</item>
+        <item quantity="other">%d calendars</item>
+    </plurals>
+    <string name="summary_no_calendars">no calendars</string>
+    <string name="summary_no_birthdays">no birthdays</string>
+    <string name="summary_transparency">%1$d%% transparent</string>
 </resources>

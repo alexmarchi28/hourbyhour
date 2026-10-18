@@ -45,4 +45,26 @@
     <string name="preview_day_1">lun 12</string>
     <string name="preview_day_2">mar 13</string>
     <string name="preview_day_3">mer 14</string>
+
+    <string name="your_widgets">I tuoi widget</string>
+    <string name="your_widgets_hint">Tocca un widget per cambiarne le impostazioni.</string>
+    <string name="widget_number">Widget %1$d</string>
+    <plurals name="summary_days">
+        <item quantity="one">%d giorno</item>
+        <item quantity="many">%d giorni</item>
+        <item quantity="other">%d giorni</item>
+    </plurals>
+    <plurals name="summary_days_from_monday">
+        <item quantity="one">%d giorno da lunedì</item>
+        <item quantity="many">%d giorni da lunedì</item>
+        <item quantity="other">%d giorni da lunedì</item>
+    </plurals>
+    <plurals name="summary_calendars">
+        <item quantity="one">%d calendario</item>
+        <item quantity="many">%d calendari</item>
+        <item quantity="other">%d calendari</item>
+    </plurals>
+    <string name="summary_no_calendars">nessun calendario</string>
+    <string name="summary_no_birthdays">senza compleanni</string>
+    <string name="summary_transparency">trasparenza %1$d%%</string>
 </resources>
