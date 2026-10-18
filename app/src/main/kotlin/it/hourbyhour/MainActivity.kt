@@ -77,8 +77,8 @@ class MainActivity : Activity() {
         grantButton.visibility = if (granted) View.GONE else View.VISIBLE
         grantButton.setText(if (deniedForever) R.string.open_settings else R.string.grant_access)
         // Calendar access may have changed since the widgets were last drawn.
-        val context = applicationContext
-        preview.reload { WidgetUpdater.updateAll(context) }
+        HourByHourWidget.redrawAll(applicationContext)
+        preview.reload()
         // Widgets may have been added, removed or changed while the app was in the background.
         widgetList.reload()
     }

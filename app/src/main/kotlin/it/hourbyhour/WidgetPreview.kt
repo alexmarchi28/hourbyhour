@@ -21,11 +21,10 @@ class WidgetPreview(private val activity: Activity, private val container: Frame
             render()
         }
 
-    /** Reads the calendar again and redraws. [alsoInBackground] runs on the same background thread. */
-    fun reload(alsoInBackground: () -> Unit = {}) {
+    /** Reads the calendar again and redraws. */
+    fun reload() {
         thread {
             val read = services.widgetRefresh().agenda()
-            alsoInBackground()
             activity.runOnUiThread {
                 if (activity.isDestroyed) return@runOnUiThread
                 agenda = read

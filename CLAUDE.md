@@ -53,9 +53,10 @@ WidgetSettingsStore.kt  salva le impostazioni per id del widget (SharedPreferenc
 WidgetSettingsActivity.kt  schermata impostazioni di un widget, aperta dal launcher, con anteprima sopra lo sfondo della Home
 CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse) e sull'elenco dei calendari; PhoneCalendar è l'EventSource vero
 WidgetViews.kt        traduce un WidgetLayout in RemoteViews, senza prendere decisioni
-WidgetUpdater.kt      guscio Android di WidgetRefresh: misura i widget, li disegna, programma il prossimo aggiornamento
+WidgetUpdater.kt      guscio Android di WidgetRefresh: misura i widget e li disegna
+RefreshScheduler.kt   dopo ogni ridisegno: sveglia del prossimo quarto d'ora, job sul calendario, anteprima del selettore
 HourByHourWidget.kt   AppWidgetProvider: aggiunta, ridimensionamento, cambi di ora/fuso/lingua
-CalendarChangeJob.kt  JobService con trigger sul content URI del calendario
+CalendarChangeJob.kt  JobService con trigger sul content URI del calendario (programmato da RefreshScheduler)
 MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", anteprima del widget, elenco dei widget sulla Home
 WidgetList.kt         elenco dei widget sulla Home in MainActivity: toccandone uno si aprono le sue impostazioni
 WidgetPreview.kt      anteprima del widget nelle schermate dell'app (stesse RemoteViews del launcher, senza click)
@@ -144,7 +145,7 @@ Nel widget ogni colore di evento si imposta per **entrambi i temi** (`setColorSt
 - Il launcher può riapplicare le nuove `RemoteViews` sopra quelle vecchie invece di ricrearle: i contenitori riempiti a runtime vanno svuotati con `removeAllViews` e devono contenere **solo** view aggiunte a runtime.
 - Colori statici in `values/colors.xml` e `values-night/colors.xml`: il widget segue subito il tema di sistema. In codice si impostano solo i colori degli eventi, con una variante per tema (vedi "Colori degli eventi").
 
-Aggiornamenti: alla aggiunta e al ridimensionamento del widget, quando cambia il calendario (job con trigger sul content URI, che si riprogramma dopo ogni esecuzione), e ogni quarto d'ora con un allarme `RTC` che non sveglia il telefono (sposta la linea dell'ora e cambia giorno a mezzanotte). `updatePeriodMillis` (30 min) è solo una rete di sicurezza. Un widget che fallisce tiene il contenuto di prima e non ferma gli altri (`drawEach`). Le schermate chiedono il ridisegno al provider (`HourByHourWidget.redraw`), che lavora con `goAsync`: un thread avviato da un'attività che si chiude può morire con il processo.
+Aggiornamenti: alla aggiunta e al ridimensionamento del widget, quando cambia il calendario (job con trigger sul content URI, che si riprogramma dopo ogni esecuzione), e ogni quarto d'ora con un allarme `RTC` che non sveglia il telefono (sposta la linea dell'ora e cambia giorno a mezzanotte). `updatePeriodMillis` (30 min) è solo una rete di sicurezza. Disegnare (`WidgetUpdater`) e programmare (`RefreshScheduler`) sono separati: dopo ogni ridisegno il provider, e il job alla fine della sua esecuzione, chiamano `RefreshScheduler.afterRedraw`; con l'ultimo widget tolto, `cancel`. Un widget che fallisce tiene il contenuto di prima e non ferma gli altri (`drawEach`). Le schermate chiedono il ridisegno al provider (`HourByHourWidget.redraw`), che lavora con `goAsync`: un thread avviato da un'attività che si chiude può morire con il processo.
 
 ## Verifica sul telefono
 
@@ -158,8 +159,8 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 - Per capire se i test proteggono davvero una parte di codice, rompila apposta (cambia un `<=` in `<`, un coefficiente, una condizione) e controlla che almeno un test fallisca. Poi ripristina con `git checkout`.
 - I colori attesi nei test di `GoogleColors` vengono da screenshot reali o da un'implementazione indipendente: non rigenerarli dal codice Kotlin, altrimenti il test non verifica più niente.
 - I test girano sulla JVM, dove le classi Android esistono solo come stub che lanciano eccezioni. Per testare codice che tocca Android:
-  - le decisioni stanno in funzioni senza tipi Android, anche dentro i file Android: `nextRefreshTime` ed `estimatedSize` (`WidgetUpdater.kt`), `calendarUri` (`CalendarIntents.kt`), `spanWeightSums` (`WidgetViews.kt`);
-  - l'ora arriva da un `java.time.Clock` (`Agenda.read`, `WidgetUpdater.update`, `WidgetPickerPreview.publishIfNeeded`), predefinito quello di sistema: nei test si usa `Clock.fixed`;
+  - le decisioni stanno in funzioni senza tipi Android, anche dentro i file Android: `nextRefreshTime` (`RefreshScheduler.kt`), `estimatedSize` (`WidgetUpdater.kt`), `calendarUri` (`CalendarIntents.kt`), `spanWeightSums` (`WidgetViews.kt`);
+  - l'ora arriva da un `java.time.Clock` (`Agenda.read`, `WidgetRefresh`, `RefreshScheduler`, `WidgetPickerPreview.publishIfNeeded`), predefinito quello di sistema (`AppServices.clock`): nei test si usa `Clock.fixed`;
   - le interfacce Android si sostituiscono con finti in memoria: `FakeSharedPreferences` per `WidgetSettingsStore`, `fakeCursor` per le righe lette da `CalendarSource` (ha solo le colonne della query, come il provider), `EventSource` e `SettingsRepository` finti per `WidgetRefresh` (`WidgetRefreshTest`: permesso negato, una lettura per tutti i widget, un widget che fallisce).
 - Il resto si prova sul telefono, con i test in `app/src/androidTest` (girano nel processo dell'app):
   - `WidgetViewsDeviceTest`: le RemoteViews applicate, misurate e disposte come in un launcher (posizioni, titoli, intestazioni, tocchi). I tocchi mandano broadcast di prova invece di aprire il calendario.

@@ -1,6 +1,7 @@
 package it.hourbyhour
 
 import android.appwidget.AppWidgetHostView
+import android.app.job.JobScheduler
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
@@ -8,6 +9,7 @@ import android.widget.TextView
 import java.time.LocalDate
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -70,6 +72,35 @@ class WidgetDeviceTest {
         targetContext.sendBroadcast(Intent(HourByHourWidget.ACTION_REFRESH).setClass(targetContext, HourByHourWidget::class.java))
 
         waitFor("two days") { headers().size == 2 }
+    }
+
+    private val jobs = targetContext.getSystemService(JobScheduler::class.java)
+
+    private fun calendarJob() = jobs.getPendingJob(RefreshScheduler.CALENDAR_JOB_ID)
+
+    @Test
+    fun aRedrawLeavesTheCalendarJobWaitingForChanges() {
+        jobs.cancel(RefreshScheduler.CALENDAR_JOB_ID)
+
+        HourByHourWidget.redraw(targetContext, intArrayOf(widget.id))
+
+        waitFor("the calendar job") { calendarJob() != null }
+    }
+
+    @Test
+    fun theCalendarJobIsScheduledAgainAfterItsRunAndCancelledWithTheLastWidget() {
+        val scheduler = RefreshScheduler(targetContext)
+        try {
+            jobs.cancel(RefreshScheduler.CALENDAR_JOB_ID)
+            scheduler.afterRedraw(fromCalendarJob = true)
+            assertEquals(CalendarChangeJob::class.java.name, calendarJob()?.service?.className)
+
+            scheduler.cancel()
+            assertNull(calendarJob())
+        } finally {
+            // The widgets on the home screen keep their alarm and job.
+            scheduler.afterRedraw()
+        }
     }
 
     @Test
