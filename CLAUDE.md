@@ -99,6 +99,7 @@ Il selettore dei widget del launcher mostra il widget prima che venga aggiunto. 
 
 - `previewLayout` in `widget_info.xml` (`widget_preview.xml`): un'immagine statica del widget, tre giorni dalle 9 alle 16, fatta come il widget vero (pesi, solo classi ammesse da `RemoteViews`, colori statici che seguono il tema). I colori degli eventi (`preview_*` in `colors.xml`) sono quelli che `eventColors` dà ai colori di `SampleAgenda` nei due temi: `WidgetPickerPreviewDeviceTest` lo controlla, quindi se cambiano i colori aggiornali lì.
 - Da Android 15 l'app passa al selettore anche le `RemoteViews` vere del widget (`AppWidgetManager.setWidgetPreview`, "generated preview"), con le impostazioni predefinite e gli eventi inventati di oggi, senza click. Android accetta poche chiamate all'ora: `WidgetPickerPreview.publishIfNeeded` la ripete solo quando cambia qualcosa che si vede (aggiornamento dell'app, lingua, giorno: l'anteprima mostra le date), ricordando l'ultima in `PickerPreviewStore`. La chiamano l'avvio dell'app (anche senza widget sulla Home), `LOCALE_CHANGED`, `MY_PACKAGE_REPLACED` e ogni aggiornamento dei widget (una lettura delle preferenze se non serve).
+- Il launcher Motorola (Android 16) mostra `previewLayout` anche quando l'anteprima generata è pubblicata (verificato il 18/10/2026, tema chiaro e scuro): per chi usa quel launcher conta solo `widget_preview.xml`, con le sue date fisse ("lun 12", "mar 13", "mer 14"). Per vederlo: tieni premuto sulla Home → Widget → cerca HourByHour.
 
 ## Tocchi sul widget
 
