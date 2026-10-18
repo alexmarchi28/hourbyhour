@@ -9,4 +9,4 @@
     android:paddingVertical="2dp"
     android:singleLine="true"
     android:textColor="@color/widget_text_secondary"
-    android:textSize="10sp" />
+    android:textSize="@dimen/banner_text_size" />

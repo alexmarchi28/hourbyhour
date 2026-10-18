@@ -1,5 +1,17 @@
 package it.hourbyhour
 
+import it.hourbyhour.LayoutEstimates.BANNER_ROW_HEIGHT_DP
+import it.hourbyhour.LayoutEstimates.CHAR_WIDTH_EM
+import it.hourbyhour.LayoutEstimates.CHROME_HEIGHT_DP
+import it.hourbyhour.LayoutEstimates.EVENT_HORIZONTAL_SPACE_DP
+import it.hourbyhour.LayoutEstimates.EVENT_PADDING_DP
+import it.hourbyhour.LayoutEstimates.EVENT_TEXT_SP
+import it.hourbyhour.LayoutEstimates.HEADER_MARGIN_DP
+import it.hourbyhour.LayoutEstimates.HEADER_TEXT_SP
+import it.hourbyhour.LayoutEstimates.HORIZONTAL_CHROME_DP
+import it.hourbyhour.LayoutEstimates.LABEL_SPACING_SP
+import it.hourbyhour.LayoutEstimates.LINE_HEIGHT_SP
+import it.hourbyhour.LayoutEstimates.MIN_TITLE_SP
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -222,28 +234,54 @@ private fun bannerCell(day: Day, row: Int, rows: Int): BannerCell {
 private const val MAX_BANNER_ROWS = 2
 private val LABEL_STEPS = listOf(1, 2, 3, 4, 6, 12)
 
-// Estimates in dp/sp matching the layouts in res/layout, used only with the estimated height.
-private const val CHROME_HEIGHT_DP = 38f
-private const val BANNER_ROW_HEIGHT_DP = 18f
-private const val LABEL_SPACING_SP = 14f
-private const val LINE_HEIGHT_SP = 13f
-private const val EVENT_PADDING_DP = 3f
-
-// Widths in dp/sp matching the layouts, used with the estimated width.
-private const val HORIZONTAL_CHROME_DP = 34f // widget padding (2 x 6) and hour labels gutter (22)
-private const val HEADER_MARGIN_DP = 2f
-private const val HEADER_TEXT_SP = 12f
-private const val EVENT_TEXT_SP = 11f
-private const val EVENT_HORIZONTAL_SPACE_DP = 9f // separator, margins and padding of an event box
-
-/** Average width of a character in em: a little wide, so that estimates err on the safe side. */
-private const val CHAR_WIDTH_EM = 0.6f
-
 /** The thinnest an event is drawn, so that it stays visible. */
 private const val MIN_BAR_DP = 3f
 
 /**
- * Below this height even the smallest compact title (8sp, see event_box_compact.xml) does not fit.
- * Autosize does not go lower: long titles are cut with an ellipsis instead of becoming unreadable.
+ * Sizes of the views in res/layout, in dp and sp, from which the layout estimates the space of the
+ * widget. The exact ones are in dimens.xml too, and LayoutEstimatesDeviceTest checks that they agree;
+ * the others are estimates of what the views measure, a little large so that they err on the safe side,
+ * and the same test checks them against the views drawn on the phone.
  */
-private const val MIN_TITLE_SP = 8f
+internal object LayoutEstimates {
+    // Heights, used with the estimated height of the widget.
+
+    /** Widget padding (2 x widget_padding), day headers and grid_margin_top. */
+    const val CHROME_HEIGHT_DP = 38f
+
+    /** One row of all-day chips, with its margin. */
+    const val BANNER_ROW_HEIGHT_DP = 18f
+
+    /** The space an hour label needs not to touch the next one. */
+    const val LABEL_SPACING_SP = 14f
+
+    /** One line of an event title (event_text_size). */
+    const val LINE_HEIGHT_SP = 13f
+
+    /** event_padding_top and event_margin_bottom. */
+    const val EVENT_PADDING_DP = 3f
+
+    // Widths, used with the estimated width of the widget.
+
+    /** Widget padding (2 x widget_padding) and the hour labels gutter (widget_gutter). */
+    const val HORIZONTAL_CHROME_DP = 34f
+
+    /** Kept free around a day header, so that its text does not touch the next one. */
+    const val HEADER_MARGIN_DP = 2f
+
+    const val HEADER_TEXT_SP = 12f
+
+    const val EVENT_TEXT_SP = 11f
+
+    /** Separator, margins and padding of an event box (column_separator, event_margin, event_padding_horizontal). */
+    const val EVENT_HORIZONTAL_SPACE_DP = 9f
+
+    /** Average width of a character in em: a little wide, so that estimates err on the safe side. */
+    const val CHAR_WIDTH_EM = 0.6f
+
+    /**
+     * Below this height even the smallest compact title (event_text_min_size) does not fit. Autosize
+     * does not go lower: long titles are cut with an ellipsis instead of becoming unreadable.
+     */
+    const val MIN_TITLE_SP = 8f
+}

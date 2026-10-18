@@ -8,15 +8,15 @@
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">0dp</item>
         <item name="android:layout_marginHorizontal">@dimen/event_margin</item>
-        <item name="android:layout_marginBottom">1dp</item>
+        <item name="android:layout_marginBottom">@dimen/event_margin_bottom</item>
         <item name="android:background">@drawable/event_background</item>
         <item name="android:ellipsize">end</item>
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:includeFontPadding">false</item>
         <item name="android:paddingHorizontal">@dimen/event_padding_horizontal</item>
-        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingTop">@dimen/event_padding_top</item>
         <item name="android:textColor">@color/preview_event_text</item>
-        <item name="android:textSize">11sp</item>
+        <item name="android:textSize">@dimen/event_text_size</item>
     </style>
 
     <!-- Like hour_row.xml, with the label set here. -->
@@ -56,7 +56,7 @@
         <item name="android:gravity">center</item>
         <item name="android:singleLine">true</item>
         <item name="android:textColor">@color/widget_text</item>
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">@dimen/header_text_size</item>
     </style>
 
     <!-- Like day_column.xml: the separator, then the events stacked by their weights in minutes. -->
