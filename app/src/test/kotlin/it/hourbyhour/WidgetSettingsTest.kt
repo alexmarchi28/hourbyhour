@@ -3,6 +3,7 @@ package it.hourbyhour
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -82,6 +83,46 @@ class WidgetSettingsTest {
     @Test
     fun wholeWeekAlwaysShowsTheCurrentWeek() {
         for (day in 12..18) assertEquals("October $day", october(12), fromMonday(7).firstDay(october(day)))
+    }
+
+    @Test
+    fun hoursFitTheEventsByDefault() {
+        assertFalse(WidgetSettings().customHours)
+        assertNull(WidgetSettings().minimumHours)
+        // The hours the widget shows without events, offered when custom hours are turned on.
+        assertEquals(HourRange(8, 20), WidgetSettings().hours)
+    }
+
+    @Test
+    fun chosenHoursApplyOnlyWithCustomHours() {
+        assertEquals(HourRange(7, 19), WidgetSettings(customHours = true, hours = HourRange(7, 19)).minimumHours)
+        assertNull(WidgetSettings(customHours = false, hours = HourRange(7, 19)).minimumHours)
+    }
+
+    @Test
+    fun hoursFromMidnightToMidnightAreAccepted() {
+        assertEquals(HourRange(0, 24), WidgetSettings(hours = HourRange(0, 24)).hours)
+        assertEquals(HourRange(23, 24), WidgetSettings(hours = HourRange(23, 24)).hours)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun hoursEndingWhenTheyStartAreRejected() {
+        WidgetSettings(hours = HourRange(10, 10))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun hoursEndingBeforeTheyStartAreRejected() {
+        WidgetSettings(hours = HourRange(20, 8))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun hoursBeforeMidnightAreRejected() {
+        WidgetSettings(hours = HourRange(-1, 8))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun hoursAfterMidnightAreRejected() {
+        WidgetSettings(hours = HourRange(8, 25))
     }
 
     @Test(expected = IllegalArgumentException::class)

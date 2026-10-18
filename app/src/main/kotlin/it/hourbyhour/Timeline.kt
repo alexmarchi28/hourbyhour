@@ -35,8 +35,8 @@ data class Segment(val event: CalendarEvent, val startMinute: Int, val endMinute
 /** A segment drawn in [column] of [columns] side-by-side columns, so overlapping events stay visible. */
 data class PlacedSegment(val segment: Segment, val column: Int, val columns: Int)
 
-/** What the widget shows: the days with their events, as seen at [now]. */
-data class Snapshot(val days: List<Day>, val now: ZonedDateTime)
+/** What the widget shows: the days with their events and the [hours] of the grid, as seen at [now]. */
+data class Snapshot(val days: List<Day>, val now: ZonedDateTime, val hours: HourRange = hourRange(days))
 
 /**
  * The events read from the calendar at [now], for the current and the next week: every widget (and
@@ -46,7 +46,8 @@ data class Agenda(val events: List<CalendarEvent>, val now: ZonedDateTime) {
     fun snapshot(settings: WidgetSettings): Snapshot {
         val firstDay = settings.firstDay(now.toLocalDate())
         val shown = events.filter { settings.shows(it) }
-        return Snapshot(splitIntoDays(shown, firstDay, settings.dayCount, now.zone), now)
+        val days = splitIntoDays(shown, firstDay, settings.dayCount, now.zone)
+        return Snapshot(days, now, hourRange(days, settings.minimumHours))
     }
 
     companion object {
@@ -66,6 +67,12 @@ data class Day(val date: LocalDate, val allDay: List<CalendarEvent>, val timed: 
 /** The hours shown on the grid, from [start] (inclusive) to [end] (exclusive), within 0..24. */
 data class HourRange(val start: Int, val end: Int) {
     val hours: Int get() = end - start
+
+    /** The range from [hour], with the end moved later when needed to keep at least an hour. */
+    fun startingAt(hour: Int) = HourRange(hour, maxOf(end, hour + 1))
+
+    /** The range up to [hour], with the start moved earlier when needed to keep at least an hour. */
+    fun endingAt(hour: Int) = HourRange(minOf(start, hour - 1), hour)
 }
 
 private const val MINUTES_PER_DAY = 24 * 60
@@ -129,14 +136,17 @@ private fun minuteOfDay(millis: Long, dayEnd: Long, zone: ZoneId): Int {
 }
 
 /**
- * The hours to show: from the earliest start to the latest end of the timed events,
- * widened to at least [minHours] so a single short event does not fill the whole widget.
+ * The hours to show: from the earliest start to the latest end of the timed events. With [minimum]
+ * (the hours chosen for the widget) the grid shows at least those hours, and grows only to fit the
+ * events outside them, so that no event is hidden. Without it, the hours are widened to at least
+ * [minHours] so a single short event does not fill the whole widget, and are [default] without events.
  */
-fun hourRange(days: List<Day>, minHours: Int = 6, default: HourRange = HourRange(8, 20)): HourRange {
+fun hourRange(days: List<Day>, minimum: HourRange? = null, minHours: Int = 6, default: HourRange = HourRange(8, 20)): HourRange {
     val segments = days.flatMap { it.timed }
-    if (segments.isEmpty()) return default
+    if (segments.isEmpty()) return minimum ?: default
     var start = segments.minOf { it.startMinute } / 60
     var end = (segments.maxOf { it.endMinute } + 59) / 60
+    if (minimum != null) return HourRange(minOf(start, minimum.start), maxOf(end, minimum.end))
     val target = minHours.coerceIn(1, 24)
     while (end - start < target) {
         if (end < 24) end++
