@@ -14,7 +14,7 @@ object WidgetUpdater {
     /** The views of [content]: its days, or a message asking for calendar access. Previews are not [clickable]. */
     fun views(context: Context, content: WidgetContent, clickable: Boolean = true): RemoteViews {
         // A tap on a preview would open the calendar app and leave the preview.
-        val views = WidgetViews(context, content.settings, if (clickable) CalendarIntents(context)::pendingIntent else null)
+        val views = WidgetViews(context, content.settings.backgroundAlpha, if (clickable) CalendarIntents(context)::pendingIntent else null)
         val layout = content.layout ?: return views.message()
         return views.build(layout)
     }
