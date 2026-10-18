@@ -67,8 +67,12 @@ class LayoutEstimatesDeviceTest {
         root
     }
 
+    /**
+     * The estimate is not smaller than the drawn view, give or take [ROUNDING_PX] pixels: padding and
+     * text heights are rounded to whole pixels, which on a density like 2.3875 add up to about one.
+     */
     private fun assertEstimate(what: String, estimateDp: Float, measuredDp: Float, slackDp: Float) {
-        assertTrue("$what: estimated $estimateDp dp, drawn $measuredDp dp", measuredDp <= estimateDp + DELTA)
+        assertTrue("$what: estimated $estimateDp dp, drawn $measuredDp dp", measuredDp <= estimateDp + ROUNDING_PX / density)
         assertTrue("$what: estimated $estimateDp dp, drawn $measuredDp dp", measuredDp >= estimateDp - slackDp)
     }
 
@@ -92,8 +96,9 @@ class LayoutEstimatesDeviceTest {
 
     @Test
     fun titleLineIsAsEstimated() {
+        val root = draw()
         val title = onMain {
-            draw().descendants().filterIsInstance<TextView>()
+            root.descendants().filterIsInstance<TextView>()
                 .first { it.id == R.id.event_box && it.autoSizeTextType == TextView.AUTO_SIZE_TEXT_TYPE_NONE }
         }
 
@@ -104,5 +109,6 @@ class LayoutEstimatesDeviceTest {
         const val WIDTH_DP = 400f
         const val HEIGHT_DP = 500f
         const val DELTA = 0.01f
+        const val ROUNDING_PX = 2f
     }
 }
