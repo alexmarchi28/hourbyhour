@@ -52,14 +52,15 @@ class WidgetSettingsActivity : Activity() {
         hoursToValue = findViewById(R.id.hours_to_value)
 
         findViewById<SeekBar>(R.id.transparency).apply {
-            max = 100 / WidgetSettings.TRANSPARENCY_STEP
+            max = WidgetSettings.TRANSPARENCY_RANGE.last / WidgetSettings.TRANSPARENCY_STEP
             progress = settings.transparency / WidgetSettings.TRANSPARENCY_STEP
             onProgress { settings = settings.copy(transparency = it * WidgetSettings.TRANSPARENCY_STEP) }
         }
         findViewById<SeekBar>(R.id.day_count).apply {
-            max = WidgetSettings.MAX_DAY_COUNT - 1
-            progress = settings.dayCount - 1
-            onProgress { settings = settings.copy(dayCount = it + 1) }
+            val days = WidgetSettings.DAY_COUNT_RANGE
+            max = days.last - days.first
+            progress = settings.dayCount - days.first
+            onProgress { settings = settings.copy(dayCount = it + days.first) }
         }
         startOnMonday = findViewById<Switch>(R.id.start_on_monday).apply {
             isChecked = settings.startOnMonday
@@ -77,13 +78,13 @@ class WidgetSettingsActivity : Activity() {
         }
         // Each bar keeps the other one on its side: the hours span at least one hour.
         hoursFrom = findViewById<SeekBar>(R.id.hours_from).apply {
-            max = 23
+            max = WidgetSettings.HOURS_RANGE.last - 1
             progress = settings.hours.start
             onProgress { settings = settings.copy(hours = settings.hours.startingAt(it)) }
         }
         hoursTo = findViewById<SeekBar>(R.id.hours_to).apply {
-            max = 24
-            min = 1
+            max = WidgetSettings.HOURS_RANGE.last
+            min = WidgetSettings.HOURS_RANGE.first + 1
             progress = settings.hours.end
             onProgress { settings = settings.copy(hours = settings.hours.endingAt(it)) }
         }

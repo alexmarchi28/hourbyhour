@@ -11,9 +11,9 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
     constructor(context: Context) : this(context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE))
 
     fun load(widgetId: Int) = WidgetSettings(
-        transparency = preferences.getInt(transparencyKey(widgetId), WidgetSettings.DEFAULT_TRANSPARENCY).coerceIn(0, 100),
-        dayCount = preferences.getInt(dayCountKey(widgetId), WidgetSettings.DEFAULT_DAY_COUNT)
-            .coerceIn(1, WidgetSettings.MAX_DAY_COUNT),
+        transparency = preferences.getInt(transparencyKey(widgetId), WidgetSettings.DEFAULT_TRANSPARENCY)
+            .coerceIn(WidgetSettings.TRANSPARENCY_RANGE),
+        dayCount = preferences.getInt(dayCountKey(widgetId), WidgetSettings.DEFAULT_DAY_COUNT).coerceIn(WidgetSettings.DAY_COUNT_RANGE),
         startOnMonday = preferences.getBoolean(startOnMondayKey(widgetId), false),
         // No saved set means all calendars. The set from preferences must not be modified: copy it.
         calendarIds = preferences.getStringSet(calendarsKey(widgetId), null)?.mapNotNull { it.toLongOrNull() }?.toSet(),
@@ -26,8 +26,9 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
 
     /** The saved hours brought back within a day, with the end after the start as when choosing them. */
     private fun loadHours(widgetId: Int): HourRange {
-        val start = preferences.getInt(hoursFromKey(widgetId), WidgetSettings.DEFAULT_HOURS.start).coerceIn(0, 23)
-        val end = preferences.getInt(hoursToKey(widgetId), WidgetSettings.DEFAULT_HOURS.end).coerceIn(1, 24)
+        val day = WidgetSettings.HOURS_RANGE
+        val start = preferences.getInt(hoursFromKey(widgetId), WidgetSettings.DEFAULT_HOURS.start).coerceIn(day.first, day.last - 1)
+        val end = preferences.getInt(hoursToKey(widgetId), WidgetSettings.DEFAULT_HOURS.end).coerceIn(day.first + 1, day.last)
         return HourRange(start, end).startingAt(start)
     }
 
@@ -49,11 +50,15 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
         editor.apply()
     }
 
-    /** Forgets the settings of widgets removed from the home screen. */
+    /**
+     * Forgets the settings of widgets removed from the home screen: every key ending with `_<id>`,
+     * including keys this version no longer writes.
+     */
     fun delete(widgetIds: IntArray) {
         val editor = preferences.edit()
-        for (id in widgetIds) {
-            for (key in keys(id)) editor.remove(key)
+        for (key in preferences.all.keys) {
+            val id = key.substringAfterLast('_').toIntOrNull() ?: continue
+            if (id in widgetIds) editor.remove(key)
         }
         editor.apply()
     }
@@ -66,17 +71,6 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
     private fun customHoursKey(widgetId: Int) = "custom_hours_$widgetId"
     private fun hoursFromKey(widgetId: Int) = "hours_from_$widgetId"
     private fun hoursToKey(widgetId: Int) = "hours_to_$widgetId"
-
-    private fun keys(widgetId: Int) = listOf(
-        transparencyKey(widgetId),
-        dayCountKey(widgetId),
-        startOnMondayKey(widgetId),
-        calendarsKey(widgetId),
-        birthdaysKey(widgetId),
-        customHoursKey(widgetId),
-        hoursFromKey(widgetId),
-        hoursToKey(widgetId),
-    )
 
     companion object {
         const val FILE_NAME = "widget_settings"
