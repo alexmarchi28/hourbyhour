@@ -42,7 +42,7 @@ Timeline.kt           logica pura, testata su JVM: Agenda (eventi letti), eventi
 GoogleColors.kt       logica pura, testata su JVM: colori del provider → colori mostrati da Google Calendar
 WidgetLayout.kt       logica pura, testata su JVM: cosa mostra il widget e dove (frazioni delle colonne)
 EventColors.kt        logica pura, testata su JVM: colori di riempimento e testo degli eventi, per tema
-WidgetSettings.kt     logica pura, testata su JVM: impostazioni di un widget (trasparenza, numero di giorni, partenza da lunedì, calendari)
+WidgetSettings.kt     logica pura, testata su JVM: impostazioni di un widget (trasparenza, numero di giorni, partenza da lunedì, calendari, fascia oraria)
 SampleAgenda.kt       logica pura, testata su JVM: una settimana di eventi inventati (selettore dei widget e scheda dello store)
 WidgetSummary.kt      logica pura, testata su JVM: descrizione breve di ogni widget e numerazione, per l'elenco nell'app
 WidgetSettingsStore.kt  salva le impostazioni per id del widget (SharedPreferences), cancellate in onDeleted
@@ -59,7 +59,7 @@ WidgetPickerPreview.kt  anteprima nel selettore dei widget del launcher, con gli
 CalendarIntents.kt    intent che aprono l'app calendario su un evento o un giorno
 ```
 
-`Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt`, `WidgetSettings.kt`, `SampleAgenda.kt` e `WidgetSummary.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni di ogni widget) → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
+`Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt`, `WidgetSettings.kt`, `SampleAgenda.kt` e `WidgetSummary.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni e la fascia oraria di ogni widget) → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
 
 Il calendario si legge **una volta** per due settimane da lunedì (`Agenda.DAYS`), una finestra che copre ogni impostazione possibile (fino a 7 giorni da oggi, o la settimana da lunedì, questa o la prossima); ogni widget e l'anteprima ne prendono i propri giorni senza rileggere il calendario. La fascia oraria si calcola solo sui giorni mostrati.
 
@@ -70,6 +70,7 @@ Regole sulla visualizzazione (in `Timeline.kt`):
 - Eventi tutto il giorno ed eventi con orario lunghi **24 ore o più** vanno nella riga in alto (banner) di ogni giorno che toccano, come fa Google Calendar. Gli altri vengono tagliati sui giorni che attraversano.
 - Gli eventi tutto il giorno sono salvati a mezzanotte **UTC**: le loro date si leggono in UTC, non nel fuso locale.
 - La fascia oraria va dall'inizio del primo evento con orario alla fine dell'ultimo, su tutti i giorni mostrati, allargata ad almeno 6 ore. Senza eventi: 8–20.
+- Con la fascia oraria personalizzata (vedi "Impostazioni per widget") si mostrano **almeno** le ore scelte, senza il minimo di 6 ore: la griglia si allarga solo per gli eventi fuori fascia, così nessun evento resta nascosto.
 - Gli eventi sovrapposti si dividono la larghezza del giorno in colonne, in base agli **orari reali**: due eventi che non si sovrappongono non stanno mai affiancati (un evento senza durata conta 1 minuto).
 
 Regole sulla lunghezza degli eventi (in `WidgetLayout.kt`):
@@ -91,6 +92,7 @@ Ogni widget ha le sue impostazioni (`WidgetSettings`), salvate per id del widget
 - **Inizia da lunedì:** vale da 5 giorni in su (sotto resta salvato ma non ha effetto, e l'interruttore è disattivato). Quando i giorni scelti della settimana sono finiti (sabato e domenica con 5 giorni, domenica con 6) si mostra la **settimana successiva**; con 7 giorni sempre la settimana in corso. La regola è in `WidgetSettings.firstDay`.
 - **Calendari:** `calendarIds` a `null` (predefinito) vuol dire **tutti**, compresi quelli creati in seguito; un insieme vuol dire solo quelli. Spuntarli tutti nella schermata torna a `null` (`WidgetSettings.calendarSelection`). Gli id che non esistono più si ignorano. La lista mostra solo i calendari sincronizzati, il principale per primo, con la casella del colore Google Calendar.
 - **Compleanni:** i compleanni dei contatti Google stanno nel calendario principale, ma Google Calendar li mostra come un calendario a sé, verde. `CalendarSource` li riconosce dalla proprietà estesa `shared:calendarProviderEventType = BIRTHDAY` (non documentata: se Google la cambia, tornano eventi normali del calendario principale), dà loro `GoogleColors.BIRTHDAYS` (salvia, il colore predefinito di Google Calendar: quello scelto dall'utente sta nelle impostazioni di Google Calendar, fuori dalla portata delle altre app) e li segna con `CalendarEvent.birthday`. Ogni widget li mostra o nasconde con `showBirthdays`, indipendentemente dal calendario che li contiene; la casella "Compleanni" viene dopo i calendari ed è spuntata di default, anche per i widget salvati prima che esistesse.
+- **Fascia oraria personalizzata:** spenta di default (le ore si adattano agli eventi, come prima). Accesa, mostra almeno le ore scelte, da 0 a 24 a passi di un'ora e almeno un'ora (predefinite 8–20, come senza eventi); un evento fuori fascia allarga la griglia (`hourRange` con `minimum`). Le due barre si spingono a vicenda (`HourRange.startingAt`/`endingAt`). Spenta, le ore scelte restano salvate ma non hanno effetto, e le barre sono disattivate.
 - Un calendario appena creato arriva nel calendario del telefono solo quando Google lo sincronizza (sul telefono di sviluppo una volta al giorno, oppure con "Aggiorna" nel menu di Google Calendar). Prima di allora il widget non può vederlo: la schermata lo spiega sotto la lista.
 - Nuove impostazioni vanno in `WidgetSettings`, in `WidgetSettingsStore` (con la cancellazione in `delete`) e in questa schermata.
 - `MainActivity` mostra l'anteprima (`WidgetPreview`) con le impostazioni predefinite.
@@ -196,4 +198,4 @@ Rigenerale quando cambia l'aspetto del widget, e guardale prima di committarle.
 
 ## Fuori scope per ora (non implementare senza richiesta esplicita)
 
-Altre azioni al tocco (ad esempio creare un evento), Material You e colori dinamici, altre impostazioni del widget (ad esempio la fascia oraria fissa), ombre o colore del testo adattati allo sfondo, login Google e Calendar API.
+Altre azioni al tocco (ad esempio creare un evento), Material You e colori dinamici, altre impostazioni del widget (ad esempio una fascia oraria fissa che nasconde gli eventi fuori), ombre o colore del testo adattati allo sfondo, login Google e Calendar API.
