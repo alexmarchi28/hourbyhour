@@ -2,6 +2,8 @@
 <!--
     updatePeriodMillis is only a fallback: WidgetUpdater redraws every quarter hour and on calendar changes.
     The settings screen is optional when adding the widget (defaults are fine) and can be reopened later.
+    previewLayout is what the widget picker shows; from Android 15 the app may replace it with the
+    real widget views (WidgetPickerPreview).
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:configure="it.hourbyhour.WidgetSettingsActivity"
@@ -11,6 +13,7 @@
     android:minHeight="180dp"
     android:minResizeWidth="180dp"
     android:minResizeHeight="180dp"
+    android:previewLayout="@layout/widget_preview"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"
     android:targetCellHeight="3"

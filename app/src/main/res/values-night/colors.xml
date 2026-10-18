@@ -6,4 +6,9 @@
     <color name="widget_grid">#3C4043</color>
     <color name="widget_today">#8AB4F8</color>
     <color name="widget_now">#F28B82</color>
+
+    <color name="preview_peacock">#5399D0</color>
+    <color name="preview_flamingo">#D4847B</color>
+    <color name="preview_grape">#AA61BB</color>
+    <color name="preview_event_text">#FFFFFF</color>
 </resources>

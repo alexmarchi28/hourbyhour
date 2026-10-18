@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Widget picker preview (widget_preview.xml). Like event_box.xml, with its share of the column
+        given by its layout_weight in minutes.
+    -->
+    <style name="PreviewEvent">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_marginHorizontal">@dimen/event_margin</item>
+        <item name="android:layout_marginBottom">1dp</item>
+        <item name="android:background">@drawable/event_background</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:paddingHorizontal">@dimen/event_padding_horizontal</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:textColor">@color/preview_event_text</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+
+    <!-- Like hour_row.xml, with the label set here. -->
+    <style name="PreviewHourLabel">
+        <item name="android:layout_width">@dimen/widget_gutter</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">end</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textColor">@color/widget_text_secondary</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:translationY">-6sp</item>
+    </style>
+
+    <style name="PreviewHourLine">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">1dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@color/widget_grid</item>
+    </style>
+
+    <style name="PreviewHourRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:clipChildren">false</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <!-- Like day_header.xml. -->
+    <style name="PreviewDayHeader">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:gravity">center</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textColor">@color/widget_text</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <!-- Like day_column.xml: the separator, then the events stacked by their weights in minutes. -->
+    <style name="PreviewDayColumn">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+    </style>
+
+    <style name="PreviewColumnSeparator">
+        <item name="android:layout_width">@dimen/column_separator</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:background">@color/widget_grid</item>
+    </style>
+
+    <style name="PreviewColumnEvents">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_marginStart">@dimen/column_separator</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:weightSum">420</item>
+    </style>
+
+    <style name="PreviewGap">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0dp</item>
+    </style>
+</resources>
