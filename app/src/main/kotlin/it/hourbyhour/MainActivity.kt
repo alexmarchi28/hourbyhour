@@ -15,11 +15,15 @@ import android.widget.Button
 import android.widget.TextView
 import kotlin.concurrent.thread
 
-/** Asks for calendar access, offers to add the widget, shows a preview of it and links the privacy policy. */
+/**
+ * Asks for calendar access, offers to add the widget, shows a preview of it, lists the widgets on the
+ * home screen to open their settings and links the privacy policy.
+ */
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var grantButton: Button
     private lateinit var preview: WidgetPreview
+    private lateinit var widgetList: WidgetList
     private var deniedForever = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,6 +32,7 @@ class MainActivity : Activity() {
         status = findViewById(R.id.status)
         grantButton = findViewById(R.id.grant)
         preview = WidgetPreview(this, findViewById(R.id.preview))
+        widgetList = WidgetList(this, findViewById(R.id.widgets_section), findViewById(R.id.widgets))
 
         grantButton.setOnClickListener {
             if (deniedForever) {
@@ -74,6 +79,8 @@ class MainActivity : Activity() {
         // Calendar access may have changed since the widgets were last drawn.
         val context = applicationContext
         preview.reload { WidgetUpdater.updateAll(context) }
+        // Widgets may have been added, removed or changed while the app was in the background.
+        widgetList.reload()
     }
 
     private companion object {

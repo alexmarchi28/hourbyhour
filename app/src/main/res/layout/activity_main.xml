@@ -44,6 +44,36 @@
             android:layout_height="420dp"
             android:layout_marginTop="8dp" />
 
+        <!-- The widgets on the home screen, each opening its settings (WidgetList). Hidden without widgets. -->
+        <LinearLayout
+            android:id="@+id/widgets_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/your_widgets"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/your_widgets_hint"
+                android:textColor="?android:attr/textColorSecondary" />
+
+            <LinearLayout
+                android:id="@+id/widgets"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="vertical" />
+        </LinearLayout>
+
         <Button
             android:id="@+id/privacy_policy"
             style="?android:attr/borderlessButtonStyle"
