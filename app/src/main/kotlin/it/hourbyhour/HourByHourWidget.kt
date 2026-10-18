@@ -41,7 +41,7 @@ class HourByHourWidget : AppWidgetProvider() {
     }
 
     override fun onDeleted(context: Context, widgetIds: IntArray) {
-        WidgetSettingsStore(context).delete(widgetIds)
+        AppServices(context).settings.delete(widgetIds)
     }
 
     override fun onDisabled(context: Context) {

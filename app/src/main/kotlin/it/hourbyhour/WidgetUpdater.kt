@@ -15,20 +15,17 @@ import java.util.Locale
 object WidgetUpdater {
     private const val TAG = "HourByHour"
 
-    /** The events of the current and next week, or null when calendar access has not been granted. */
-    fun loadAgenda(context: Context, clock: Clock = Clock.systemDefaultZone()): Agenda? {
-        if (!CalendarSource.hasPermission(context)) return null
-        return Agenda.read(clock) { begin, end -> CalendarSource.load(context, begin, end) }
+    /** The views of [content]: its days, or a message asking for calendar access. Previews are not [clickable]. */
+    fun views(context: Context, content: WidgetContent, clickable: Boolean = true): RemoteViews {
+        // A tap on a preview would open the calendar app and leave the preview.
+        val views = WidgetViews(context, content.settings, if (clickable) CalendarIntents(context)::pendingIntent else null)
+        val layout = content.layout ?: return views.message()
+        return views.build(layout)
     }
 
-    /** The widget content, or a message asking for calendar access when [agenda] is null. Previews are not [clickable]. */
-    fun views(context: Context, agenda: Agenda?, size: WidgetSize, settings: WidgetSettings, clickable: Boolean = true): RemoteViews {
-        // A tap on a preview would open the calendar app and leave the preview.
-        val views = WidgetViews(context, settings, if (clickable) CalendarIntents(context)::pendingIntent else null)
-        if (agenda == null) return views.message()
-        val fontScale = context.resources.configuration.fontScale
-        return views.build(layoutWidget(agenda.snapshot(settings), size, fontScale, Locale.getDefault()))
-    }
+    /** The views of a widget with [settings] showing [agenda] (null without calendar access), as [views] above. */
+    fun views(context: Context, agenda: Agenda?, size: WidgetSize, settings: WidgetSettings, clickable: Boolean = true): RemoteViews =
+        views(context, widgetContent(agenda, settings, size, context.resources.configuration.fontScale, Locale.getDefault()), clickable)
 
     /** Redraws every widget. Returns false when none is on the home screen. */
     fun updateAll(context: Context): Boolean {
@@ -38,21 +35,22 @@ object WidgetUpdater {
         return ids.isNotEmpty()
     }
 
-    fun update(context: Context, manager: AppWidgetManager, widgetIds: IntArray, clock: Clock = Clock.systemDefaultZone()) {
+    fun update(context: Context, manager: AppWidgetManager, widgetIds: IntArray, services: AppServices = AppServices(context)) {
         if (widgetIds.isEmpty()) return
+        val clock = services.clock
         try {
-            val agenda = loadAgenda(context, clock)
-            val store = WidgetSettingsStore(context)
-            drawEach(
+            services.widgetRefresh(clock).refresh(
                 widgetIds,
-                draw = { id ->
+                size = { id ->
                     val options = manager.getAppWidgetOptions(id)
-                    val size = estimatedSize(
+                    estimatedSize(
                         minWidthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH),
                         maxHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT),
                     )
-                    manager.updateAppWidget(id, views(context, agenda, size, store.load(id)))
                 },
+                fontScale = context.resources.configuration.fontScale,
+                locale = Locale.getDefault(),
+                draw = { id, content -> manager.updateAppWidget(id, views(context, content)) },
                 onFailure = { id, e -> Log.e(TAG, "Update of widget $id failed", e) },
             )
         } catch (e: RuntimeException) {
@@ -86,20 +84,6 @@ object WidgetUpdater {
         Intent(context, HourByHourWidget::class.java).setAction(HourByHourWidget.ACTION_REFRESH),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
-}
-
-/**
- * Runs [draw] for each of [widgetIds]. A widget that fails keeps its last content and does not stop
- * the others: [onFailure] gets its id and the error, and the next refresh tries again.
- */
-fun drawEach(widgetIds: IntArray, draw: (Int) -> Unit, onFailure: (Int, RuntimeException) -> Unit) {
-    for (id in widgetIds) {
-        try {
-            draw(id)
-        } catch (e: RuntimeException) {
-            onFailure(id, e)
-        }
-    }
 }
 
 /**

@@ -10,6 +10,7 @@ import kotlin.concurrent.thread
  */
 class WidgetPreview(private val activity: Activity, private val container: FrameLayout) {
     private val context = activity.applicationContext
+    private val services = AppServices(context)
     private var agenda: Agenda? = null
     private var loaded = false
 
@@ -23,7 +24,7 @@ class WidgetPreview(private val activity: Activity, private val container: Frame
     /** Reads the calendar again and redraws. [alsoInBackground] runs on the same background thread. */
     fun reload(alsoInBackground: () -> Unit = {}) {
         thread {
-            val read = WidgetUpdater.loadAgenda(context)
+            val read = services.widgetRefresh().agenda()
             alsoInBackground()
             activity.runOnUiThread {
                 if (activity.isDestroyed) return@runOnUiThread

@@ -141,3 +141,12 @@ object CalendarSource {
     /** Provider colors may lack the alpha channel. */
     private fun opaque(color: Int) = color or 0xFF000000.toInt()
 }
+
+/** The calendar of the phone as an [EventSource]. */
+class PhoneCalendar(private val context: Context) : EventSource {
+    override fun hasPermission() = CalendarSource.hasPermission(context)
+
+    override fun events(begin: Long, end: Long) = CalendarSource.load(context, begin, end)
+
+    override fun calendars() = CalendarSource.loadCalendars(context)
+}
