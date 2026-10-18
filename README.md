@@ -4,7 +4,7 @@ An Android home screen widget that shows your calendar hour by hour, over 1 to 7
 
 - Events in the same colors as Google Calendar, in the light and dark theme, with contact birthdays as a calendar of their own
 - From 1 to 7 days, starting today or from Monday
-- Adjustable background transparency and choice of calendars for every widget
+- Adjustable background transparency, hours shown and choice of calendars for every widget
 - Tap an event or a day to open it in your calendar app
 - Resizable: hours and titles adapt to the size of the widget
 
