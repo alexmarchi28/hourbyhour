@@ -1,15 +1,21 @@
 package it.hourbyhour
 
 import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
 import android.content.ComponentName
 import android.content.Context
+import android.os.Build
 import android.view.View
 import android.view.View.MeasureSpec
 import android.widget.FrameLayout
 import android.widget.RemoteViews
 import android.widget.TextView
+import java.time.LocalDate
+import java.time.ZoneId
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 /** What the launcher's widget picker shows before the widget is added. */
@@ -78,5 +84,29 @@ class WidgetPickerPreviewDeviceTest {
                 assertEquals("Text of ${string(title)}, dark $dark", if (dark) expected.darkText else expected.lightText, box.currentTextColor)
             }
         }
+    }
+
+    @Test
+    fun theGeneratedPreviewShowsTheMadeUpEventsOfToday() {
+        val today = LocalDate.now()
+        val root = show(WidgetPickerPreview.views(targetContext, today, ZoneId.systemDefault()))
+
+        val texts = root.texts()
+        for (title in listOf(R.string.sample_project_review, R.string.sample_dentist, R.string.sample_design_workshop)) {
+            assertTrue("${string(title)} in $texts", string(title) in texts)
+        }
+        assertEquals(WidgetSettings.DEFAULT_DAY_COUNT, onMain { root.childrenOf(R.id.headers).size })
+        // A tap in the picker must not open the calendar.
+        assertTrue(onMain { root.descendants().none { it.hasOnClickListeners() } })
+    }
+
+    @Test
+    fun theGeneratedPreviewIsPublished() {
+        assumeTrue("Generated previews need Android 15", Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM)
+
+        WidgetPickerPreview.publishIfNeeded(targetContext)
+
+        val manager = AppWidgetManager.getInstance(targetContext)
+        assertNotNull(manager.getWidgetPreview(provider, null, AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN))
     }
 }

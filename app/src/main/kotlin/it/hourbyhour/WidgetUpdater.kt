@@ -62,6 +62,8 @@ object WidgetUpdater {
         } finally {
             scheduleRefresh(context)
             CalendarChangeJob.ensureScheduled(context)
+            // The picker preview shows dates: a new one on the first redraw of the day.
+            WidgetPickerPreview.publishIfNeeded(context)
         }
     }
 

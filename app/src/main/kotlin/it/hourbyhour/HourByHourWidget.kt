@@ -14,8 +14,13 @@ class HourByHourWidget : AppWidgetProvider() {
         when (intent.action) {
             ACTION_REFRESH,
             Intent.ACTION_TIME_CHANGED,
-            Intent.ACTION_TIMEZONE_CHANGED,
-            Intent.ACTION_LOCALE_CHANGED -> updateAsync { WidgetUpdater.updateAll(context) }
+            Intent.ACTION_TIMEZONE_CHANGED -> updateAsync { WidgetUpdater.updateAll(context) }
+            // The picker preview is in the language of the phone and comes from the code of the app.
+            Intent.ACTION_LOCALE_CHANGED,
+            Intent.ACTION_MY_PACKAGE_REPLACED -> updateAsync {
+                WidgetPickerPreview.publishIfNeeded(context)
+                WidgetUpdater.updateAll(context)
+            }
             else -> super.onReceive(context, intent)
         }
     }
