@@ -1,0 +1,44 @@
+# Builds the app and runs the JVM tests and lint on every push to main and every pull request.
+# Tests on the phone (connectedDebugAndroidTest) need a device and stay local, see CLAUDE.md.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # Also checks that the Gradle wrapper jar is an official one.
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The runner has the Android SDK; AGP downloads the platform and build tools it lacks.
+      - name: Build, test and lint
+        run: ./gradlew --stacktrace assembleDebug testDebugUnitTest lintDebug createDebugUnitTestCoverageReport
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          if-no-files-found: ignore
