@@ -1,5 +1,6 @@
 package it.hourbyhour
 
+import java.io.Serializable
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -15,7 +16,7 @@ data class PlacedSegment(val segment: Segment, val column: Int, val columns: Int
 data class Day(val date: LocalDate, val allDay: List<CalendarEvent>, val timed: List<Segment>)
 
 /** The hours shown on the grid, from [start] (inclusive) to [end] (exclusive), within 0..24. */
-data class HourRange(val start: Int, val end: Int) {
+data class HourRange(val start: Int, val end: Int) : Serializable {
     val hours: Int get() = end - start
 
     /** The range from [hour], with the end moved later when needed to keep at least an hour. */
