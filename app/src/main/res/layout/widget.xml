@@ -13,7 +13,7 @@
     android:clipChildren="false"
     android:clipToOutline="true"
     android:orientation="vertical"
-    android:padding="6dp">
+    android:padding="@dimen/widget_padding">
 
     <LinearLayout
         android:id="@+id/headers"
@@ -32,7 +32,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="@dimen/grid_margin_top"
         android:layout_weight="1"
         android:clipChildren="false">
 

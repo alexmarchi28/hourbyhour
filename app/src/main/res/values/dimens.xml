@@ -11,4 +11,18 @@
     <dimen name="column_separator">1dp</dimen>
     <dimen name="event_margin">1dp</dimen>
     <dimen name="event_padding_horizontal">3dp</dimen>
+
+    <!--
+        WidgetLayout estimates the space of the widget from these sizes (see LayoutEstimates):
+        LayoutEstimatesDeviceTest checks that the two agree.
+    -->
+    <dimen name="widget_padding">6dp</dimen>
+    <dimen name="grid_margin_top">6dp</dimen>
+    <dimen name="event_padding_top">2dp</dimen>
+    <dimen name="event_margin_bottom">1dp</dimen>
+    <dimen name="header_text_size">12sp</dimen>
+    <dimen name="event_text_size">11sp</dimen>
+    <!-- The smallest compact title: below this, long titles would become unreadable. -->
+    <dimen name="event_text_min_size">8sp</dimen>
+    <dimen name="banner_text_size">10sp</dimen>
 </resources>

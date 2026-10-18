@@ -8,5 +8,5 @@
     android:gravity="center"
     android:singleLine="true"
     android:textColor="@color/widget_today"
-    android:textSize="12sp"
+    android:textSize="@dimen/header_text_size"
     android:textStyle="bold" />

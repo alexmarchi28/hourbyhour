@@ -5,12 +5,12 @@
     android:layout_width="0dp"
     android:layout_height="match_parent"
     android:layout_marginHorizontal="@dimen/event_margin"
-    android:layout_marginBottom="1dp"
+    android:layout_marginBottom="@dimen/event_margin_bottom"
     android:layout_weight="1"
     android:background="@drawable/event_background"
     android:ellipsize="end"
     android:fontFamily="sans-serif-medium"
     android:includeFontPadding="false"
     android:paddingHorizontal="@dimen/event_padding_horizontal"
-    android:paddingTop="2dp"
-    android:textSize="11sp" />
+    android:paddingTop="@dimen/event_padding_top"
+    android:textSize="@dimen/event_text_size" />

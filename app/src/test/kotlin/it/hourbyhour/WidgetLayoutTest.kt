@@ -15,7 +15,7 @@ class WidgetLayoutTest {
     private val monday = LocalDate.of(2026, 10, 12)
 
     // With this height the grid is 360dp tall: one dp per minute when the range spans 6 hours.
-    private val heightDp = 398f
+    private val heightDp = 360f + LayoutEstimates.CHROME_HEIGHT_DP
     private val delta = 1e-6f
 
     private fun at(day: Int, hour: Int, minute: Int = 0) =
