@@ -44,6 +44,7 @@ WidgetLayout.kt       logica pura, testata su JVM: cosa mostra il widget e dove 
 EventColors.kt        logica pura, testata su JVM: colori di riempimento e testo degli eventi, per tema
 WidgetSettings.kt     logica pura, testata su JVM: impostazioni di un widget (trasparenza, numero di giorni, partenza da lunedì, calendari)
 SampleAgenda.kt       logica pura, testata su JVM: una settimana di eventi inventati (selettore dei widget e scheda dello store)
+WidgetSummary.kt      logica pura, testata su JVM: descrizione breve di ogni widget e numerazione, per l'elenco nell'app
 WidgetSettingsStore.kt  salva le impostazioni per id del widget (SharedPreferences), cancellate in onDeleted
 WidgetSettingsActivity.kt  schermata impostazioni di un widget, aperta dal launcher, con anteprima sopra lo sfondo della Home
 CalendarSource.kt     query su CalendarContract.Instances (le ricorrenze sono già espanse) e sull'elenco dei calendari
@@ -51,13 +52,14 @@ WidgetViews.kt        traduce un WidgetLayout in RemoteViews, senza prendere dec
 WidgetUpdater.kt      carica gli eventi, aggiorna i widget, programma il prossimo aggiornamento
 HourByHourWidget.kt   AppWidgetProvider: aggiunta, ridimensionamento, cambi di ora/fuso/lingua
 CalendarChangeJob.kt  JobService con trigger sul content URI del calendario
-MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", anteprima del widget
+MainActivity.kt       permesso calendario, pulsante "aggiungi alla Home", anteprima del widget, elenco dei widget sulla Home
+WidgetList.kt         elenco dei widget sulla Home in MainActivity: toccandone uno si aprono le sue impostazioni
 WidgetPreview.kt      anteprima del widget nelle schermate dell'app (stesse RemoteViews del launcher, senza click)
 WidgetPickerPreview.kt  anteprima nel selettore dei widget del launcher, con gli eventi inventati
 CalendarIntents.kt    intent che aprono l'app calendario su un evento o un giorno
 ```
 
-`Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt`, `WidgetSettings.kt` e `SampleAgenda.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni di ogni widget) → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
+`Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt`, `WidgetSettings.kt`, `SampleAgenda.kt` e `WidgetSummary.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni di ogni widget) → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
 
 Il calendario si legge **una volta** per due settimane da lunedì (`Agenda.DAYS`), una finestra che copre ogni impostazione possibile (fino a 7 giorni da oggi, o la settimana da lunedì, questa o la prossima); ogni widget e l'anteprima ne prendono i propri giorni senza rileggere il calendario. La fascia oraria si calcola solo sui giorni mostrati.
 
@@ -92,6 +94,7 @@ Ogni widget ha le sue impostazioni (`WidgetSettings`), salvate per id del widget
 - Un calendario appena creato arriva nel calendario del telefono solo quando Google lo sincronizza (sul telefono di sviluppo una volta al giorno, oppure con "Aggiorna" nel menu di Google Calendar). Prima di allora il widget non può vederlo: la schermata lo spiega sotto la lista.
 - Nuove impostazioni vanno in `WidgetSettings`, in `WidgetSettingsStore` (con la cancellazione in `delete`) e in questa schermata.
 - `MainActivity` mostra l'anteprima (`WidgetPreview`) con le impostazioni predefinite.
+- **Dall'app:** sul launcher Motorola l'ingranaggio compare solo mentre ridimensioni il widget, e alcuni launcher non permettono di riaprire le impostazioni. Per questo `MainActivity` elenca i widget sulla Home ("I tuoi widget", nascosto se non ce ne sono, aggiornato in `onResume`): "Widget N" in ordine di aggiunta (gli id crescono), con una descrizione breve (`WidgetSettings.summary`: i giorni, poi solo quello che differisce dai valori predefiniti, ad esempio "7 giorni da lunedì · 2 calendari · senza compleanni"). Toccandone uno si apre `WidgetSettingsActivity` con il suo `EXTRA_APPWIDGET_ID`. Una nuova impostazione che si vuole riconoscere nell'elenco va anche in `summary` e in `describe` (`WidgetList.kt`).
 
 ## Anteprima nel selettore dei widget
 
@@ -154,7 +157,7 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
   - `WidgetViewsDeviceTest`: le RemoteViews applicate, misurate e disposte come in un launcher (posizioni, titoli, intestazioni, tocchi). I tocchi mandano broadcast di prova invece di aprire il calendario.
   - `CalendarSourceDeviceTest`: le query sul provider (`SELECTION`, ordine, finestra, compleanni) su calendari locali creati e cancellati da `TestCalendars`. Il permesso di scrittura lo prende in prestito dalla shell adb (`adoptShellPermissionIdentity`): l'app resta con il solo `READ_CALENDAR`.
   - `WidgetDeviceTest` e `WidgetSettingsActivityDeviceTest`: il test ospita un proprio widget (`TestWidget`), fuori dalla Home, e lo aggiorna, ridimensiona, configura e rimuove. Non toccano i widget veri né le loro impostazioni. `WidgetDeviceTest` prova anche un compleanno da capo a fondo: evento in un calendario locale → widget verde → nascosto dalle impostazioni.
-  - `CalendarIntentsDeviceTest` (Google Calendar accetta gli intent dei tocchi) e `MainActivityDeviceTest`.
+  - `CalendarIntentsDeviceTest` (Google Calendar accetta gli intent dei tocchi) e `MainActivityDeviceTest`, che trova nell'elenco dei widget il `TestWidget` (stesso provider dei widget veri, ospitato dal test) e ne apre le impostazioni.
   - `WidgetPickerPreviewDeviceTest`: `widget_preview.xml` gonfiato come `RemoteViews` (posizioni, titoli, colori nei due temi) e l'anteprima generata (eventi inventati, nessun click, pubblicata).
 - `gradle.properties` contiene `android.injected.androidTest.leaveApksInstalledAfterRun=true`: senza, AGP disinstalla l'app dopo i test sul telefono, e i widget spariscono dalla Home. Non toglierlo.
 - Restano da provare a mano: il launcher vero (dimensioni riportate, viste riapplicate), l'aspetto (colori confrontati con Google Calendar, tema chiaro), i tempi della sveglia e del job sul calendario.
