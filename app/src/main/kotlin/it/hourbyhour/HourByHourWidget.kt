@@ -12,7 +12,13 @@ class HourByHourWidget : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
-            ACTION_REFRESH,
+            // From redraw: only the widgets it names. From the quarter-hour alarm (and adb): all of them.
+            ACTION_REFRESH -> {
+                val ids = intent.getIntArrayExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS)
+                updateAsync {
+                    if (ids == null) WidgetUpdater.updateAll(context) else WidgetUpdater.update(context, AppWidgetManager.getInstance(context), ids)
+                }
+            }
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED -> updateAsync { WidgetUpdater.updateAll(context) }
             // The picker preview is in the language of the phone and comes from the code of the app.
@@ -57,5 +63,15 @@ class HourByHourWidget : AppWidgetProvider() {
 
     companion object {
         const val ACTION_REFRESH = "it.hourbyhour.action.REFRESH"
+
+        /**
+         * Redraws [widgetIds] in the background of the widget provider, which keeps the app alive until
+         * it is done: a thread started by an activity that is closing could die with the process.
+         */
+        fun redraw(context: Context, widgetIds: IntArray) {
+            context.sendBroadcast(
+                Intent(context, HourByHourWidget::class.java).setAction(ACTION_REFRESH).putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds),
+            )
+        }
     }
 }

@@ -73,6 +73,14 @@ class WidgetDeviceTest {
     }
 
     @Test
+    fun redrawRedrawsTheWidgetsItNames() {
+        store.save(widget.id, WidgetSettings(dayCount = 4))
+        HourByHourWidget.redraw(targetContext, intArrayOf(widget.id))
+
+        waitFor("four days") { headers().size == 4 }
+    }
+
+    @Test
     fun resizingRedrawsForTheNewSize() {
         fun resize(widthDp: Int) = manager.updateAppWidgetOptions(
             widget.id,

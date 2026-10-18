@@ -47,14 +47,18 @@ object WidgetUpdater {
         try {
             val agenda = loadAgenda(context)
             val store = WidgetSettingsStore(context)
-            for (id in widgetIds) {
-                val options = manager.getAppWidgetOptions(id)
-                val size = estimatedSize(
-                    minWidthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH),
-                    maxHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT),
-                )
-                manager.updateAppWidget(id, views(context, agenda, size, store.load(id)))
-            }
+            drawEach(
+                widgetIds,
+                draw = { id ->
+                    val options = manager.getAppWidgetOptions(id)
+                    val size = estimatedSize(
+                        minWidthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH),
+                        maxHeightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT),
+                    )
+                    manager.updateAppWidget(id, views(context, agenda, size, store.load(id)))
+                },
+                onFailure = { id, e -> Log.e(TAG, "Update of widget $id failed", e) },
+            )
         } catch (e: RuntimeException) {
             // The widgets keep their last content and the next refresh tries again, instead of
             // crashing the app in the background.
@@ -86,6 +90,20 @@ object WidgetUpdater {
         Intent(context, HourByHourWidget::class.java).setAction(HourByHourWidget.ACTION_REFRESH),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
+}
+
+/**
+ * Runs [draw] for each of [widgetIds]. A widget that fails keeps its last content and does not stop
+ * the others: [onFailure] gets its id and the error, and the next refresh tries again.
+ */
+fun drawEach(widgetIds: IntArray, draw: (Int) -> Unit, onFailure: (Int, RuntimeException) -> Unit) {
+    for (id in widgetIds) {
+        try {
+            draw(id)
+        } catch (e: RuntimeException) {
+            onFailure(id, e)
+        }
+    }
 }
 
 /**
