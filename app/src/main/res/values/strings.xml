@@ -47,4 +47,8 @@
     <string name="sample_groceries">Groceries</string>
     <string name="sample_brunch">Brunch</string>
     <string name="sample_reading">Reading</string>
+    <!-- The days of the static widget picker preview (widget_preview.xml), as the widget writes them. -->
+    <string name="preview_day_1">Mon 12</string>
+    <string name="preview_day_2">Tue 13</string>
+    <string name="preview_day_3">Wed 14</string>
 </resources>

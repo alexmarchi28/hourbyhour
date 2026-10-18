@@ -42,4 +42,7 @@
     <string name="sample_groceries">Spesa</string>
     <string name="sample_brunch">Brunch</string>
     <string name="sample_reading">Lettura</string>
+    <string name="preview_day_1">lun 12</string>
+    <string name="preview_day_2">mar 13</string>
+    <string name="preview_day_3">mer 14</string>
 </resources>

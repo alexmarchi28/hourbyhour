@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The widget in the launcher's widget picker (previewLayout in widget_info.xml): three days of
+    made-up events from SampleAgenda, from 9 to 16, placed by weights like the real widget (see
+    widget.xml). Launchers inflate it as RemoteViews: no View or Space. Static colors, which follow the
+    theme like the widget. From Android 15 the app also hands the picker the real views of the
+    widget (WidgetPickerPreview), which launchers may show instead.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:clipChildren="false"
+    android:clipToOutline="true"
+    android:orientation="vertical"
+    android:padding="6dp"
+    tools:ignore="HardcodedText,NestedWeights">
+
+    <LinearLayout
+        android:id="@+id/preview_headers"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/widget_gutter"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/PreviewDayHeader"
+            android:text="@string/preview_day_1"
+            android:textColor="@color/widget_today"
+            android:textStyle="bold" />
+
+        <TextView
+            style="@style/PreviewDayHeader"
+            android:text="@string/preview_day_2" />
+
+        <TextView
+            style="@style/PreviewDayHeader"
+            android:text="@string/preview_day_3" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_weight="1"
+        android:clipChildren="false">
+
+        <LinearLayout
+            android:id="@+id/preview_hours"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:orientation="vertical">
+
+            <LinearLayout style="@style/PreviewHourRow">
+                <TextView style="@style/PreviewHourLabel" android:text="9" />
+                <FrameLayout style="@style/PreviewHourLine" />
+            </LinearLayout>
+            <LinearLayout style="@style/PreviewHourRow">
+                <TextView style="@style/PreviewHourLabel" android:text="10" />
+                <FrameLayout style="@style/PreviewHourLine" />
+            </LinearLayout>
+            <LinearLayout style="@style/PreviewHourRow">
+                <TextView style="@style/PreviewHourLabel" android:text="11" />
+                <FrameLayout style="@style/PreviewHourLine" />
+            </LinearLayout>
+            <LinearLayout style="@style/PreviewHourRow">
+                <TextView style="@style/PreviewHourLabel" android:text="12" />
+                <FrameLayout style="@style/PreviewHourLine" />
+            </LinearLayout>
+            <LinearLayout style="@style/PreviewHourRow">
+                <TextView style="@style/PreviewHourLabel" android:text="13" />
+                <FrameLayout style="@style/PreviewHourLine" />
+            </LinearLayout>
+            <LinearLayout style="@style/PreviewHourRow">
+                <TextView style="@style/PreviewHourLabel" android:text="14" />
+                <FrameLayout style="@style/PreviewHourLine" />
+            </LinearLayout>
+            <LinearLayout style="@style/PreviewHourRow">
+                <TextView style="@style/PreviewHourLabel" android:text="15" />
+                <FrameLayout style="@style/PreviewHourLine" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Bottom border of the grid. -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_gravity="bottom"
+            android:layout_marginStart="@dimen/widget_gutter"
+            android:background="@color/widget_grid" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="@dimen/widget_gutter"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <FrameLayout style="@style/PreviewDayColumn">
+                <FrameLayout style="@style/PreviewColumnSeparator" />
+                <LinearLayout style="@style/PreviewColumnEvents">
+                    <TextView
+                        style="@style/PreviewEvent"
+                        android:layout_weight="15"
+                        android:backgroundTint="@color/preview_peacock" />
+                    <FrameLayout style="@style/PreviewGap" android:layout_weight="285" />
+                    <TextView
+                        style="@style/PreviewEvent"
+                        android:layout_weight="90"
+                        android:backgroundTint="@color/preview_peacock"
+                        android:text="@string/sample_project_review" />
+                    <FrameLayout style="@style/PreviewGap" android:layout_weight="30" />
+                </LinearLayout>
+            </FrameLayout>
+            <FrameLayout style="@style/PreviewDayColumn">
+                <FrameLayout style="@style/PreviewColumnSeparator" />
+                <LinearLayout style="@style/PreviewColumnEvents">
+                    <TextView
+                        style="@style/PreviewEvent"
+                        android:layout_weight="15"
+                        android:backgroundTint="@color/preview_peacock" />
+                    <FrameLayout style="@style/PreviewGap" android:layout_weight="105" />
+                    <TextView
+                        style="@style/PreviewEvent"
+                        android:layout_weight="45"
+                        android:backgroundTint="@color/preview_flamingo"
+                        android:text="@string/sample_dentist" />
+                    <FrameLayout style="@style/PreviewGap" android:layout_weight="45" />
+                    <TextView
+                        style="@style/PreviewEvent"
+                        android:layout_weight="60"
+                        android:backgroundTint="@color/preview_grape"
+                        android:text="@string/sample_lunch_with_anna" />
+                    <FrameLayout style="@style/PreviewGap" android:layout_weight="150" />
+                </LinearLayout>
+            </FrameLayout>
+            <FrameLayout style="@style/PreviewDayColumn">
+                <FrameLayout style="@style/PreviewColumnSeparator" />
+                <LinearLayout style="@style/PreviewColumnEvents">
+                    <TextView
+                        style="@style/PreviewEvent"
+                        android:layout_weight="15"
+                        android:backgroundTint="@color/preview_peacock" />
+                    <FrameLayout style="@style/PreviewGap" android:layout_weight="45" />
+                    <TextView
+                        style="@style/PreviewEvent"
+                        android:layout_weight="120"
+                        android:backgroundTint="@color/preview_peacock"
+                        android:text="@string/sample_design_workshop" />
+                    <FrameLayout style="@style/PreviewGap" android:layout_weight="240" />
+                </LinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>
