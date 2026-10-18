@@ -37,11 +37,18 @@ data class DayHeader(val label: String, val today: Boolean, val click: ClickTarg
 
 /** What a tap opens in the calendar app. */
 sealed interface ClickTarget {
+    /** Tells targets apart: two taps that open different things never share it. */
+    val key: String
+
     /** One occurrence of an event: the occurrences of a recurring event differ by [begin]. */
-    data class Event(val eventId: Long, val begin: Long, val end: Long) : ClickTarget
+    data class Event(val eventId: Long, val begin: Long, val end: Long) : ClickTarget {
+        override val key get() = "event/$eventId/$begin/$end"
+    }
 
     /** The calendar at a moment, to show a day. */
-    data class Time(val millis: Long) : ClickTarget
+    data class Time(val millis: Long) : ClickTarget {
+        override val key get() = "time/$millis"
+    }
 }
 
 /** A tap on an event opens it, whole: also from the part of an event crossing midnight. */

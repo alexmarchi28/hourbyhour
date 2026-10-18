@@ -1,5 +1,6 @@
 package it.hourbyhour
 
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -11,17 +12,19 @@ import java.util.Locale
 object WidgetUpdater {
     private const val TAG = "HourByHour"
 
-    /** The views of [content]: its days, or a message asking for calendar access. Previews are not [clickable]. */
-    fun views(context: Context, content: WidgetContent, clickable: Boolean = true): RemoteViews {
-        // A tap on a preview would open the calendar app and leave the preview.
-        val views = WidgetViews(context, content.settings.backgroundAlpha, if (clickable) CalendarIntents(context)::pendingIntent else null)
+    /**
+     * The views of [content]: its days, or a message asking for calendar access. Taps send the pending
+     * intents made by [clicks]; previews pass null, since a tap would open the calendar app and leave them.
+     */
+    fun views(context: Context, content: WidgetContent, clicks: ((ClickTarget) -> PendingIntent)?): RemoteViews {
+        val views = WidgetViews(context, content.settings.backgroundAlpha, clicks)
         val layout = content.layout ?: return views.message()
         return views.build(layout)
     }
 
-    /** The views of a widget with [settings] showing [agenda] (null without calendar access), as [views] above. */
-    fun views(context: Context, agenda: Agenda?, size: WidgetSize, settings: WidgetSettings, clickable: Boolean = true): RemoteViews =
-        views(context, widgetContent(agenda, settings, size, context.resources.configuration.fontScale, Locale.getDefault()), clickable)
+    /** The views of a preview with [settings] showing [agenda] (null without calendar access): nothing is tappable. */
+    fun previewViews(context: Context, agenda: Agenda?, size: WidgetSize, settings: WidgetSettings): RemoteViews =
+        views(context, widgetContent(agenda, settings, size, context.resources.configuration.fontScale, Locale.getDefault()), clicks = null)
 
     /** Redraws every widget. Returns false when none is on the home screen. */
     fun updateAll(context: Context, services: AppServices = AppServices(context)): Boolean {
@@ -36,6 +39,7 @@ object WidgetUpdater {
     fun update(context: Context, manager: AppWidgetManager, widgetIds: IntArray, services: AppServices = AppServices(context)): Boolean {
         if (widgetIds.isEmpty()) return false
         try {
+            val intents = CalendarIntents(context)
             services.widgetRefresh().refresh(
                 widgetIds,
                 size = { id ->
@@ -47,7 +51,7 @@ object WidgetUpdater {
                 },
                 fontScale = context.resources.configuration.fontScale,
                 locale = Locale.getDefault(),
-                draw = { id, content -> manager.updateAppWidget(id, views(context, content)) },
+                draw = { id, content -> manager.updateAppWidget(id, views(context, content, intents::pendingIntent)) },
                 onFailure = { id, e -> Log.e(TAG, "Update of widget $id failed", e) },
             )
         } catch (e: RuntimeException) {
