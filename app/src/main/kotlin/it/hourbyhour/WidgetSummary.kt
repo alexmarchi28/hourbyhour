@@ -5,6 +5,9 @@ sealed interface SettingSummary {
     /** How many days, and whether they are a week from Monday. */
     data class Days(val count: Int, val fromMonday: Boolean) : SettingSummary
 
+    /** Custom hours, from [start] to [end]. */
+    data class Hours(val start: Int, val end: Int) : SettingSummary
+
     /** Only some calendars: [count] of them. */
     data class Calendars(val count: Int) : SettingSummary
 
@@ -20,6 +23,7 @@ sealed interface SettingSummary {
  */
 fun WidgetSettings.summary(availableCalendars: Set<Long>?): List<SettingSummary> = buildList {
     add(SettingSummary.Days(dayCount, startsOnMonday))
+    minimumHours?.let { add(SettingSummary.Hours(it.start, it.end)) }
     calendarIds?.let { ids -> add(SettingSummary.Calendars(availableCalendars?.let { ids.count(it::contains) } ?: ids.size)) }
     if (!showBirthdays) add(SettingSummary.NoBirthdays)
     if (transparency != WidgetSettings.DEFAULT_TRANSPARENCY) add(SettingSummary.Transparency(transparency))

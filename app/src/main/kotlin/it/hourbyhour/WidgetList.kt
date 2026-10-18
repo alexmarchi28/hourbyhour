@@ -55,6 +55,7 @@ fun describe(resources: Resources, summary: List<SettingSummary>): String = summ
         } else {
             resources.getQuantityString(R.plurals.summary_days, it.count, it.count)
         }
+        is SettingSummary.Hours -> resources.getString(R.string.summary_hours, it.start, it.end)
         is SettingSummary.Calendars -> if (it.count == 0) {
             resources.getString(R.string.summary_no_calendars)
         } else {
