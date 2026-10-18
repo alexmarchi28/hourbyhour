@@ -37,7 +37,7 @@ class WidgetViewsDeviceTest {
 
     private val layout = WidgetLayout(
         headers = listOf(DayHeader("Lun 12", today = true, monday), DayHeader("Mar 13", today = false, tuesday)),
-        bannerRows = listOf(listOf(BannerCell.Event(holiday), BannerCell.More(3))),
+        bannerRows = listOf(listOf(BannerCell.Event(holiday, monday), BannerCell.More(3, tuesday))),
         hourLabels = listOf("8", "", "10"),
         columns = listOf(
             DayColumn(
@@ -85,7 +85,7 @@ class WidgetViewsDeviceTest {
         width: Int = 600,
         height: Int = 900,
     ): View = onMain {
-        val root = WidgetViews(targetContext, settings, clicks).build(layout).apply(targetContext, FrameLayout(targetContext))
+        val root = WidgetViews(targetContext, settings.backgroundAlpha, clicks).build(layout).apply(targetContext, FrameLayout(targetContext))
         root.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY))
         root.layout(0, 0, width, height)
         root
@@ -212,7 +212,7 @@ class WidgetViewsDeviceTest {
     @Test
     fun drawingAgainOnTheSameViewsDoesNotDuplicateThem() {
         // Launchers may apply new views on top of the previous ones.
-        val views = WidgetViews(targetContext, WidgetSettings(), null).build(layout)
+        val views = WidgetViews(targetContext, WidgetSettings().backgroundAlpha, null).build(layout)
         val root = onMain { views.apply(targetContext, FrameLayout(targetContext)).also { views.reapply(targetContext, it) } }
 
         assertEquals(2, root.childrenOf(R.id.headers).size)

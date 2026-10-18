@@ -47,13 +47,22 @@ sealed interface ClickTarget {
 /** A tap on an event opens it, whole: also from the part of an event crossing midnight. */
 fun CalendarEvent.clickTarget() = ClickTarget.Event(eventId, begin, end)
 
+/**
+ * One day of an all-day row. Every day gets a cell, so that cells line up with the grid columns
+ * below; a tap on the cell outside an event opens the day ([click], as its column).
+ */
 sealed interface BannerCell {
-    data class Event(val event: CalendarEvent) : BannerCell
+    val click: ClickTarget.Time
+
+    /** A tap on the event itself opens the event. */
+    data class Event(val event: CalendarEvent, override val click: ClickTarget.Time) : BannerCell
 
     /** Stands for [count] all-day events that do not fit. */
-    data class More(val count: Int) : BannerCell
+    data class More(val count: Int, override val click: ClickTarget.Time) : BannerCell {
+        val label: String get() = "+$count"
+    }
 
-    data object Empty : BannerCell
+    data class Empty(override val click: ClickTarget.Time) : BannerCell
 }
 
 /**
@@ -114,7 +123,7 @@ fun layoutWidget(snapshot: Snapshot, size: WidgetSize, fontScale: Float, locale:
     }
 
     val rowCount = minOf(days.maxOf { it.allDay.size }, MAX_BANNER_ROWS)
-    val bannerRows = (0 until rowCount).map { row -> days.map { bannerCell(it, row, rowCount) } }
+    val bannerRows = (0 until rowCount).map { row -> days.map { bannerCell(it, row, rowCount, dayClick(it)) } }
 
     val gridHeightDp = (size.heightDp - CHROME_HEIGHT_DP - rowCount * BANNER_ROW_HEIGHT_DP).coerceAtLeast(1f)
     val dpPerMinute = gridHeightDp / (range.hours * 60)
@@ -221,13 +230,13 @@ private fun fitsWordByWord(title: String, widthDp: Float, fontScale: Float): Boo
 private fun estimatedWidthDp(text: String, textSizeDp: Float) = text.length * CHAR_WIDTH_EM * textSizeDp
 
 /** When a day has more all-day events than rows, its last row says how many are not shown. */
-private fun bannerCell(day: Day, row: Int, rows: Int): BannerCell {
+private fun bannerCell(day: Day, row: Int, rows: Int, click: ClickTarget.Time): BannerCell {
     val overflow = day.allDay.size > rows
     val shown = if (overflow) rows - 1 else day.allDay.size
     return when {
-        row < shown -> BannerCell.Event(day.allDay[row])
-        overflow && row == rows - 1 -> BannerCell.More(day.allDay.size - shown)
-        else -> BannerCell.Empty
+        row < shown -> BannerCell.Event(day.allDay[row], click)
+        overflow && row == rows - 1 -> BannerCell.More(day.allDay.size - shown, click)
+        else -> BannerCell.Empty(click)
     }
 }
 

@@ -147,7 +147,7 @@ class StoreGraphics {
         val context = themedContext(shot.dark)
         val snapshot = Agenda(events(language), now).snapshot(shot.settings)
         val layout = layoutWidget(snapshot, WidgetSize(width / density, height / density), fontScale = 1f, language.locale)
-        val root = WidgetViews(context, shot.settings, clicks = null).build(layout).apply(context, FrameLayout(context))
+        val root = WidgetViews(context, shot.settings.backgroundAlpha, clicks = null).build(layout).apply(context, FrameLayout(context))
         root.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY))
         root.layout(0, 0, width, height)
         // Single-line texts are placed by their gravity just before being drawn in a window, which

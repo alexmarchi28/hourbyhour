@@ -71,14 +71,15 @@ class WidgetLayoutTest {
         val b = allDay("B", 12)
         val c = allDay("C", 13)
 
-        val rows = layout(a, b, c).bannerRows
+        val result = layout(a, b, c)
+        val (day0, day1, day2) = result.columns.map { it.click }
 
         assertEquals(
             listOf(
-                listOf(BannerCell.Event(a), BannerCell.Event(c), BannerCell.Empty),
-                listOf(BannerCell.Event(b), BannerCell.Empty, BannerCell.Empty),
+                listOf(BannerCell.Event(a, day0), BannerCell.Event(c, day1), BannerCell.Empty(day2)),
+                listOf(BannerCell.Event(b, day0), BannerCell.Empty(day1), BannerCell.Empty(day2)),
             ),
-            rows,
+            result.bannerRows,
         )
     }
 
@@ -86,10 +87,20 @@ class WidgetLayoutTest {
     fun bannerOverflowCountsTheHiddenEvents() {
         val a = allDay("A", 12)
 
-        val rows = layout(a, allDay("B", 12), allDay("C", 12)).bannerRows
+        val result = layout(a, allDay("B", 12), allDay("C", 12))
+        val (day0, day1, day2) = result.columns.map { it.click }
 
-        assertEquals(listOf(BannerCell.Event(a), BannerCell.Empty, BannerCell.Empty), rows[0])
-        assertEquals(listOf(BannerCell.More(2), BannerCell.Empty, BannerCell.Empty), rows[1])
+        assertEquals(listOf(BannerCell.Event(a, day0), BannerCell.Empty(day1), BannerCell.Empty(day2)), result.bannerRows[0])
+        assertEquals(listOf(BannerCell.More(2, day0), BannerCell.Empty(day1), BannerCell.Empty(day2)), result.bannerRows[1])
+        assertEquals("+2", (result.bannerRows[1][0] as BannerCell.More).label)
+    }
+
+    @Test
+    fun allDayCellsOpenTheirDayAtTheFirstHourShown() {
+        // No timed events: the grid shows 8-20.
+        val rows = layout(allDay("A", 13)).bannerRows
+
+        assertEquals(listOf(at(12, 8), at(13, 8), at(14, 8)).map { ClickTarget.Time(it) }, rows.single().map { it.click })
     }
 
     @Test

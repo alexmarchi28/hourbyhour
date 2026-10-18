@@ -58,7 +58,7 @@ class LayoutEstimatesDeviceTest {
         val settings = WidgetSettings(dayCount = 7)
         val agenda = SampleAgenda.agenda(LocalDate.of(2026, 10, 12), ZoneId.of("Europe/Rome")) { it.name }
         val layout = layoutWidget(agenda.snapshot(settings), WidgetSize(WIDTH_DP, HEIGHT_DP), fontScale = 1f, Locale.ITALY)
-        val root = WidgetViews(context, settings, clicks = null).build(layout).apply(context, FrameLayout(context))
+        val root = WidgetViews(context, settings.backgroundAlpha, clicks = null).build(layout).apply(context, FrameLayout(context))
         root.measure(
             MeasureSpec.makeMeasureSpec((WIDTH_DP * density).toInt(), MeasureSpec.EXACTLY),
             MeasureSpec.makeMeasureSpec((HEIGHT_DP * density).toInt(), MeasureSpec.EXACTLY),

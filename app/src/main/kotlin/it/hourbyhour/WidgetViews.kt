@@ -17,7 +17,8 @@ import android.widget.RemoteViews
  */
 class WidgetViews(
     private val context: Context,
-    private val settings: WidgetSettings,
+    /** The alpha of the background of this widget, see [WidgetSettings.backgroundAlpha]. */
+    private val backgroundAlpha: Int,
     private val clicks: ((ClickTarget) -> PendingIntent)?,
 ) {
     private val packageName = context.packageName
@@ -45,7 +46,7 @@ class WidgetViews(
 
         for (row in layout.bannerRows) {
             val rowViews = RemoteViews(packageName, R.layout.banner_row)
-            row.forEachIndexed { day, cell -> rowViews.addView(R.id.banner_row, bannerCell(cell, layout.columns[day].click)) }
+            for (cell in row) rowViews.addView(R.id.banner_row, bannerCell(cell))
             root.addView(R.id.banners, rowViews)
         }
 
@@ -66,12 +67,9 @@ class WidgetViews(
         return root
     }
 
-    /**
-     * Every day gets the same cell, so that cells line up with the grid columns below. A tap on the
-     * cell (empty, or with the "+N" text) opens the day; a tap on an event chip opens the event.
-     */
-    private fun bannerCell(cell: BannerCell, dayClick: ClickTarget) = RemoteViews(packageName, R.layout.banner_cell).apply {
-        setClick(R.id.banner_cell, dayClick)
+    /** Every day gets the same cell, see [BannerCell]. */
+    private fun bannerCell(cell: BannerCell) = RemoteViews(packageName, R.layout.banner_cell).apply {
+        setClick(R.id.banner_cell, cell.click)
         when (cell) {
             is BannerCell.Event -> addView(
                 R.id.banner_cell,
@@ -84,10 +82,10 @@ class WidgetViews(
             is BannerCell.More -> addView(
                 R.id.banner_cell,
                 RemoteViews(packageName, R.layout.banner_more).apply {
-                    setTextViewText(R.id.banner_more, "+${cell.count}")
+                    setTextViewText(R.id.banner_more, cell.label)
                 },
             )
-            BannerCell.Empty -> Unit
+            is BannerCell.Empty -> Unit
         }
     }
 
@@ -124,8 +122,8 @@ class WidgetViews(
         setColorStateList(
             android.R.id.background,
             "setBackgroundTintList",
-            ColorStateList.valueOf(withAlpha(lightBackground, settings.backgroundAlpha)),
-            ColorStateList.valueOf(withAlpha(darkBackground, settings.backgroundAlpha)),
+            ColorStateList.valueOf(withAlpha(lightBackground, backgroundAlpha)),
+            ColorStateList.valueOf(withAlpha(darkBackground, backgroundAlpha)),
         )
     }
 
