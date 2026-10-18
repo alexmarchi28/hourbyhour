@@ -122,6 +122,80 @@ class TimelineTest {
         assertEquals(HourRange(18, 24), hourRange(days, minHours = 6))
     }
 
+    private val chosen = HourRange(8, 20)
+
+    @Test
+    fun chosenHoursAreShownWithoutEvents() {
+        assertEquals(HourRange(7, 19), hourRange(split(allDay("Ferie", 12, 12)), minimum = HourRange(7, 19)))
+    }
+
+    @Test
+    fun chosenHoursAreKeptWhenTheEventsFallInside() {
+        val days = split(timed("A", at(12, 9), at(12, 10)), timed("B", at(14, 18), at(14, 20)))
+
+        assertEquals(chosen, hourRange(days, minimum = chosen))
+    }
+
+    @Test
+    fun chosenHoursGrowToTheEventsOutside() {
+        // Nothing is hidden: an event before or after the chosen hours widens the grid to fit it.
+        val days = split(timed("Corsa", at(12, 6, 30), at(12, 7, 30)), timed("Cena", at(13, 20, 0), at(13, 21, 15)))
+
+        assertEquals(HourRange(6, 22), hourRange(days, minimum = chosen))
+    }
+
+    @Test
+    fun chosenHoursGrowOnlyOnTheSideOfTheEvent() {
+        val days = split(timed("Corsa", at(12, 6, 30), at(12, 7, 30)))
+
+        assertEquals(HourRange(6, 20), hourRange(days, minimum = chosen))
+    }
+
+    @Test
+    fun anEventEndingWhenTheChosenHoursStartDoesNotWidenThem() {
+        val days = split(timed("Colazione", at(12, 7), at(12, 8)), timed("Aperitivo", at(12, 20), at(12, 21)))
+
+        assertEquals(HourRange(7, 21), hourRange(days, minimum = chosen))
+        assertEquals(chosen, hourRange(split(timed("A", at(12, 8), at(12, 20))), minimum = chosen))
+    }
+
+    @Test
+    fun chosenHoursShorterThanSixAreNotWidened() {
+        val days = split(timed("A", at(12, 10), at(12, 11)))
+
+        assertEquals(HourRange(9, 12), hourRange(days, minimum = HourRange(9, 12)))
+    }
+
+    @Test
+    fun anEventAcrossMidnightStretchesTheChosenHoursToTheWholeDay() {
+        val days = split(timed("Festa", at(12, 23), at(13, 1)))
+
+        assertEquals(HourRange(0, 24), hourRange(days, minimum = chosen))
+    }
+
+    @Test
+    fun theWholeDayCanBeChosen() {
+        val days = split(timed("A", at(12, 10), at(12, 11)))
+
+        assertEquals(HourRange(0, 24), hourRange(days, minimum = HourRange(0, 24)))
+    }
+
+    @Test
+    fun anHourRangeStartingLaterKeepsItsEndAfterTheStart() {
+        assertEquals(HourRange(6, 20), chosen.startingAt(6))
+        assertEquals(HourRange(19, 20), chosen.startingAt(19))
+        assertEquals(HourRange(20, 21), chosen.startingAt(20))
+        assertEquals(HourRange(23, 24), chosen.startingAt(23))
+    }
+
+    @Test
+    fun anHourRangeEndingEarlierKeepsItsStartBeforeTheEnd() {
+        assertEquals(HourRange(8, 22), chosen.endingAt(22))
+        assertEquals(HourRange(8, 9), chosen.endingAt(9))
+        assertEquals(HourRange(7, 8), chosen.endingAt(8))
+        assertEquals(HourRange(0, 1), chosen.endingAt(1))
+    }
+
     @Test
     fun separateSegmentsUseOneColumn() {
         val placed = placeSegments(listOf(segment(540, 600), segment(600, 660)), minDuration = 0)
@@ -237,6 +311,29 @@ class TimelineTest {
 
         assertEquals((19..23).map { LocalDate.of(2026, 10, it) }, snapshot.days.map { it.date })
         assertEquals(1, snapshot.days[0].timed.size)
+    }
+
+    @Test
+    fun agendaSnapshotFitsTheHoursToTheEventsByDefault() {
+        val now = LocalDateTime.of(2026, 10, 12, 8, 0).atZone(zone)
+        val agenda = Agenda(listOf(timed("A", at(12, 9), at(12, 10))), now)
+
+        val snapshot = agenda.snapshot(WidgetSettings())
+
+        assertEquals(hourRange(snapshot.days), snapshot.hours)
+        // Chosen hours are kept while custom hours are off, but have no effect.
+        assertEquals(snapshot.hours, agenda.snapshot(WidgetSettings(hours = HourRange(6, 22))).hours)
+    }
+
+    @Test
+    fun agendaSnapshotShowsTheChosenHours() {
+        val now = LocalDateTime.of(2026, 10, 12, 8, 0).atZone(zone)
+        val agenda = Agenda(listOf(timed("A", at(12, 9), at(12, 10)), timed("B", at(15, 5), at(15, 6))), now)
+
+        val snapshot = agenda.snapshot(WidgetSettings(customHours = true, hours = HourRange(7, 19)))
+
+        // The event at 5:00 is on Thursday, which is not shown: only the days shown count.
+        assertEquals(HourRange(7, 19), snapshot.hours)
     }
 
     @Test

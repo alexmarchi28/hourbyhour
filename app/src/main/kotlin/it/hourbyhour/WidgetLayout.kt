@@ -94,7 +94,7 @@ fun layoutWidget(snapshot: Snapshot, size: WidgetSize, fontScale: Float, locale:
     require(days.isNotEmpty()) { "The widget needs at least one day" }
     val today = snapshot.now.toLocalDate()
     val columnWidthDp = ((size.widthDp - HORIZONTAL_CHROME_DP) / days.size).coerceAtLeast(1f)
-    val range = hourRange(days)
+    val range = snapshot.hours
     // A day opens at the first hour shown, so a day view in the calendar app scrolls there.
     fun dayClick(day: Day) = ClickTarget.Time(day.date.atTime(range.start, 0).atZone(snapshot.now.zone).toInstant().toEpochMilli())
     val headers = days.map { day ->

@@ -111,6 +111,20 @@ class WidgetLayoutTest {
     }
 
     @Test
+    fun theGridShowsTheHoursOfTheSnapshot() {
+        val now = LocalDateTime.of(2026, 10, 12, 8, 0).atZone(zone)
+        val days = splitIntoDays(listOf(timed("A", at(12, 9), at(12, 10))), monday, 3, zone)
+
+        val result = layoutWidget(Snapshot(days, now, HourRange(8, 20)), WidgetSize(WIDTH_DP, heightDp), fontScale = 1f, locale = Locale.ITALY)
+
+        assertEquals((8 until 20).map { it.toString() }, result.hourLabels)
+        val box = result.columns[0].events.single()
+        assertEquals(1f / 12, box.top, delta)
+        assertEquals(2f / 12, box.bottom, delta)
+        assertEquals(ClickTarget.Time(at(13, 8)), result.columns[1].click)
+    }
+
+    @Test
     fun hourLabelsGetSparserWhenTheWidgetIsShort() {
         val result = layout(timed("A", at(12, 9), at(12, 10)), height = 60f)
 

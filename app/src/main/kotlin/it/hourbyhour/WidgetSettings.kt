@@ -17,11 +17,19 @@ data class WidgetSettings(
     val calendarIds: Set<Long>? = null,
     /** Show birthdays, which are a calendar of their own in Google Calendar (see [CalendarEvent.birthday]). */
     val showBirthdays: Boolean = true,
+    /** Show at least [hours] instead of fitting the hours to the events, see [minimumHours]. */
+    val customHours: Boolean = false,
+    /** The hours chosen for the grid, kept while [customHours] is off. */
+    val hours: HourRange = DEFAULT_HOURS,
 ) {
     init {
         require(transparency in 0..100) { "Transparency must be between 0 and 100, not $transparency" }
         require(dayCount in 1..MAX_DAY_COUNT) { "The day count must be between 1 and $MAX_DAY_COUNT, not $dayCount" }
+        require(hours.start >= 0 && hours.end <= 24 && hours.start < hours.end) { "The hours must be within a day, not $hours" }
     }
+
+    /** The hours the grid shows at least (it grows to fit the events outside them); null fits them to the events. */
+    val minimumHours: HourRange? get() = hours.takeIf { customHours }
 
     /** Alpha of the widget background, from 255 (opaque) to 0 (invisible). */
     val backgroundAlpha: Int get() = (255 * (100 - transparency) / 100f).roundToInt()
@@ -59,6 +67,9 @@ data class WidgetSettings(
         /** The days the widget showed before they could be chosen. */
         const val DEFAULT_DAY_COUNT = 3
         const val MAX_DAY_COUNT = 7
+
+        /** The hours the widget shows without events, offered when custom hours are turned on. */
+        val DEFAULT_HOURS = HourRange(8, 20)
 
         /** The fewest days that can start from Monday: Monday to Friday. */
         const val MIN_DAYS_FROM_MONDAY = 5
