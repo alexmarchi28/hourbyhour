@@ -55,6 +55,16 @@ class WidgetDeviceTest {
     }
 
     @Test
+    fun drawsTheChosenHours() {
+        // The whole day: whatever events the phone has, they fit in it, so the grid shows just that.
+        store.save(widget.id, WidgetSettings(customHours = true, hours = HourRange(0, 24)))
+        WidgetUpdater.update(targetContext, manager, intArrayOf(widget.id))
+
+        waitFor("an hour row for each hour of the day") { view.childrenOf(R.id.hours).size == 24 }
+        assertEquals("0", onMain { view.childrenOf(R.id.hours).first().findViewById<TextView>(R.id.hour_label).text.toString() })
+    }
+
+    @Test
     fun refreshRedrawsEveryWidget() {
         store.save(widget.id, WidgetSettings(dayCount = 2))
         targetContext.sendBroadcast(Intent(HourByHourWidget.ACTION_REFRESH).setClass(targetContext, HourByHourWidget::class.java))
