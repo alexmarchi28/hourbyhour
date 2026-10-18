@@ -104,6 +104,21 @@ class WidgetLayoutTest {
     }
 
     @Test
+    fun tapsThatOpenDifferentThingsHaveDifferentKeys() {
+        val targets = listOf(
+            ClickTarget.Event(eventId = 7, begin = 1_000, end = 2_000),
+            // The next occurrence of the same recurring event.
+            ClickTarget.Event(eventId = 7, begin = 3_000, end = 4_000),
+            ClickTarget.Event(eventId = 8, begin = 1_000, end = 2_000),
+            ClickTarget.Time(1_000),
+            ClickTarget.Time(3_000),
+        )
+
+        assertEquals(targets.size, targets.map { it.key }.toSet().size)
+        assertEquals(ClickTarget.Time(1_000).key, ClickTarget.Time(1_000).key)
+    }
+
+    @Test
     fun eventIsPlacedByFractionOfTheHourRange() {
         // The range is widened to 6 hours around the event: 7-13.
         val box = layout(timed("A", at(12, 9), at(12, 10))).columns[0].events.single()

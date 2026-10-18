@@ -28,6 +28,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        deniedForever = savedInstanceState?.getBoolean(DENIED_FOREVER) ?: false
         setContentView(R.layout.activity_main)
         status = findViewById(R.id.status)
         grantButton = findViewById(R.id.grant)
@@ -68,14 +69,17 @@ class MainActivity : Activity() {
         // After repeated denials Android stops showing the dialog: from then on, send the user to the settings.
         deniedForever = grantResults.firstOrNull() != PackageManager.PERMISSION_GRANTED &&
             !shouldShowRequestPermissionRationale(Manifest.permission.READ_CALENDAR)
-        refresh()
+        // onResume follows once the permission dialog has closed, and redraws: here only the button changes.
+        showStatus()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(DENIED_FOREVER, deniedForever)
     }
 
     private fun refresh() {
-        val granted = CalendarSource.hasPermission(this)
-        status.setText(if (granted) R.string.status_ready else R.string.status_needs_permission)
-        grantButton.visibility = if (granted) View.GONE else View.VISIBLE
-        grantButton.setText(if (deniedForever) R.string.open_settings else R.string.grant_access)
+        showStatus()
         // Calendar access may have changed since the widgets were last drawn.
         HourByHourWidget.redrawAll(applicationContext)
         preview.reload()
@@ -83,8 +87,16 @@ class MainActivity : Activity() {
         widgetList.reload()
     }
 
+    private fun showStatus() {
+        val granted = CalendarSource.hasPermission(this)
+        status.setText(if (granted) R.string.status_ready else R.string.status_needs_permission)
+        grantButton.visibility = if (granted) View.GONE else View.VISIBLE
+        grantButton.setText(if (deniedForever) R.string.open_settings else R.string.grant_access)
+    }
+
     private companion object {
         const val REQUEST_CALENDAR = 1
+        const val DENIED_FOREVER = "denied_forever"
 
         /** Published from the public repository alexmarchi28/hourbyhour-privacy with GitHub Pages. */
         const val PRIVACY_POLICY_URL = "https://alexmarchi28.github.io/hourbyhour-privacy/"

@@ -120,7 +120,7 @@ Cosa apre ogni tocco lo decide `layoutWidget` (`ClickTarget`, testato); `Calenda
 - **Eventi** (con orario e "tutto il giorno"): aprono l'evento intero, anche dalla parte dopo mezzanotte. Per gli eventi ricorrenti si apre l'occorrenza toccata (`EXTRA_EVENT_BEGIN_TIME`/`END_TIME`).
 - **Intestazione, cella "tutto il giorno" (vuota o "+N") e parte vuota della colonna:** aprono il giorno (`content://com.android.calendar/time/<millis>`) alla prima ora mostrata. Google Calendar resta nella vista che l'utente usava: in "Mese" mostra il mese, in "Giorno"/"3 giorni" il giorno.
 - Si apre **Google Calendar** se installato (dichiarato in `<queries>` nel manifest), altrimenti l'app calendario predefinita: sul telefono di sviluppo c'è anche Outlook.
-- Ogni `PendingIntent` ha un proprio `identifier`: Android distingue i pending intent per indirizzo e non per extra, e le occorrenze di un evento ricorrente hanno lo stesso indirizzo.
+- Ogni `PendingIntent` ha un proprio `identifier` (`ClickTarget.key`, testato): Android distingue i pending intent per indirizzo e non per extra, e le occorrenze di un evento ricorrente hanno lo stesso indirizzo.
 - I riquadri degli eventi stanno sopra la colonna dentro livelli trasparenti grandi quanto la colonna: quei livelli non sono cliccabili, quindi il tocco arriva al riquadro sotto il dito o, nel vuoto, alla colonna. Verificato sul launcher Motorola, anche con eventi affiancati.
 - Le anteprime nell'app (`WidgetPreview`) non hanno click, così toccarle non fa uscire dalla schermata.
 - Per provarli: `adb shell uiautomator dump` dà la posizione di ogni riquadro (`it.hourbyhour:id/event_box`, `day_header`, `banner_more`…), poi `adb shell input tap x y` e controlla cosa si apre.

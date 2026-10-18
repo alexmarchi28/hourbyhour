@@ -25,7 +25,7 @@ object WidgetPickerPreview {
     /** The views of the widget with its default settings and the made-up events of [today]. Taps do nothing. */
     fun views(context: Context, today: LocalDate, zone: ZoneId): RemoteViews {
         val agenda = SampleAgenda.agenda(today, zone) { context.getString(it.stringId) }
-        return WidgetUpdater.views(context, agenda, estimatedSize(minWidthDp = 0, maxHeightDp = 0), WidgetSettings(), clickable = false)
+        return WidgetUpdater.previewViews(context, agenda, estimatedSize(minWidthDp = 0, maxHeightDp = 0), WidgetSettings())
     }
 
     /**

@@ -26,7 +26,7 @@ class CalendarIntents(private val context: Context) {
         intent.setPackage(calendarPackage)
         // Pending intents are told apart by their data, not by extras, and the occurrences of a
         // recurring event share the data: without its own identifier, a tap could open another one.
-        intent.identifier = target.toString()
+        intent.identifier = target.key
         return intent
     }
 
