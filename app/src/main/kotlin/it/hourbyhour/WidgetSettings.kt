@@ -23,9 +23,11 @@ data class WidgetSettings(
     val hours: HourRange = DEFAULT_HOURS,
 ) {
     init {
-        require(transparency in 0..100) { "Transparency must be between 0 and 100, not $transparency" }
-        require(dayCount in 1..MAX_DAY_COUNT) { "The day count must be between 1 and $MAX_DAY_COUNT, not $dayCount" }
-        require(hours.start >= 0 && hours.end <= 24 && hours.start < hours.end) { "The hours must be within a day, not $hours" }
+        require(transparency in TRANSPARENCY_RANGE) { "Transparency must be in $TRANSPARENCY_RANGE, not $transparency" }
+        require(dayCount in DAY_COUNT_RANGE) { "The day count must be in $DAY_COUNT_RANGE, not $dayCount" }
+        require(hours.start in HOURS_RANGE && hours.end in HOURS_RANGE && hours.start < hours.end) {
+            "The hours must be within a day, not $hours"
+        }
     }
 
     /** The hours the grid shows at least (it grows to fit the events outside them); null fits them to the events. */
@@ -58,6 +60,9 @@ data class WidgetSettings(
     }
 
     companion object {
+        /** Transparency in percent, from opaque to invisible. */
+        val TRANSPARENCY_RANGE = 0..100
+
         /** The look of the widget before transparency could be chosen: a background at 95%. */
         const val DEFAULT_TRANSPARENCY = 5
 
@@ -67,6 +72,10 @@ data class WidgetSettings(
         /** The days the widget showed before they could be chosen. */
         const val DEFAULT_DAY_COUNT = 3
         const val MAX_DAY_COUNT = 7
+        val DAY_COUNT_RANGE = 1..MAX_DAY_COUNT
+
+        /** The hours a range can start and end at: from midnight to the next midnight. */
+        val HOURS_RANGE = 0..24
 
         /** The hours the widget shows without events, offered when custom hours are turned on. */
         val DEFAULT_HOURS = HourRange(8, 20)

@@ -83,6 +83,16 @@ class WidgetSettingsStoreTest {
     }
 
     @Test
+    fun deletingForgetsKeysTheStoreNoLongerWritesButNotOtherWidgetsWithSimilarIds() {
+        // A setting saved by an older version, or added later without updating delete, goes too.
+        preferences.edit().putInt("old_setting_7", 1).putInt("days_17", 4).putInt("days_70", 4).apply()
+
+        store.delete(intArrayOf(7))
+
+        assertEquals(setOf("days_17", "days_70"), preferences.all.keys)
+    }
+
+    @Test
     fun widgetsSavedBeforeBirthdaysCouldBeChosenShowThem() {
         preferences.edit().putInt("days_7", 5).putStringSet("calendars_7", setOf("3")).apply()
 
