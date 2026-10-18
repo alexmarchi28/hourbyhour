@@ -1,6 +1,5 @@
 package it.hourbyhour
 
-import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapShader
@@ -20,7 +19,6 @@ import android.widget.TextView
 import java.io.File
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -28,8 +26,9 @@ import org.junit.Test
 /**
  * Draws the pictures of the Google Play store listing with made-up events: the icon, the feature
  * graphic and the phone screenshots, in English and Italian, in the sizes Google Play asks for. The
- * widget is the real one, drawn as a launcher would. The pictures stay in the files of the app,
- * from where they are copied into the repository when they change ("Scheda dello store" in CLAUDE.md).
+ * widget is the real one, drawn as a launcher would, with the events of [SampleAgenda]. The pictures
+ * stay in the files of the app, from where they are copied into the repository when they change
+ * ("Scheda dello store" in CLAUDE.md).
  */
 class StoreGraphics {
     private val density = targetContext.resources.displayMetrics.density
@@ -145,7 +144,7 @@ class StoreGraphics {
     }
 
     private fun drawWidget(canvas: Canvas, shot: Shot, language: Language, x: Int, y: Int, width: Int, height: Int) {
-        val context = themed(shot.dark)
+        val context = themedContext(shot.dark)
         val snapshot = Agenda(events(language), now).snapshot(shot.settings)
         val layout = layoutWidget(snapshot, WidgetSize(width / density, height / density), fontScale = 1f, language.locale)
         val root = WidgetViews(context, shot.settings, clicks = null).build(layout).apply(context, FrameLayout(context))
@@ -160,51 +159,11 @@ class StoreGraphics {
         canvas.restore()
     }
 
-    /** The app in the light or dark theme, whatever the theme of the phone. */
-    private fun themed(dark: Boolean): Context {
-        val configuration = Configuration(targetContext.resources.configuration).apply {
-            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
-                if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
-        }
-        return targetContext.createConfigurationContext(configuration)
-    }
-
-    /** A week of made-up events, from Monday 12 to Sunday 18 October 2026, in Google Calendar colors. */
+    /** The made-up week from Monday 12 to Sunday 18 October 2026, titled in [language]. */
     private fun events(language: Language): List<CalendarEvent> {
-        fun at(day: Int, hour: Int, minute: Int) = LocalDate.of(2026, 10, day).atTime(hour, minute).atZone(zone).toInstant().toEpochMilli()
-
-        fun event(english: String, italian: String, day: Int, from: Pair<Int, Int>, to: Pair<Int, Int>, color: Int) =
-            CalendarEvent(language.text(english, italian), at(day, from.first, from.second), at(day, to.first, to.second), false, color)
-
-        // Stored at UTC midnights, like the calendar provider does.
-        fun allDay(english: String, italian: String, day: Int, days: Int, color: Int): CalendarEvent {
-            val start = LocalDate.of(2026, 10, day).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-            return CalendarEvent(language.text(english, italian), start, start + days * 24 * 3_600_000L, true, color)
-        }
-
-        val standups = (12..16).map { event("Stand-up", "Stand-up", it, 9 to 0, 9 to 15, PEACOCK) }
-        return standups + listOf(
-            event("Gym", "Palestra", 12, 7 to 0, 8 to 0, SAGE),
-            event("Project review", "Revisione del progetto", 12, 14 to 0, 15 to 30, PEACOCK),
-            event("Call with Marco", "Chiamata con Marco", 12, 14 to 30, 15 to 0, LAVENDER),
-            event("Dentist", "Dentista", 13, 11 to 0, 11 to 45, FLAMINGO),
-            event("Lunch with Anna", "Pranzo con Anna", 13, 12 to 30, 13 to 30, GRAPE),
-            event("Yoga", "Yoga", 13, 18 to 30, 19 to 30, SAGE),
-            event("Gym", "Palestra", 14, 7 to 0, 8 to 0, SAGE),
-            event("Design workshop", "Workshop di design", 14, 10 to 0, 12 to 0, PEACOCK),
-            event("Pick up the kids", "Prendere i bambini", 14, 16 to 30, 17 to 0, TANGERINE),
-            event("Client meeting", "Incontro con il cliente", 15, 10 to 30, 11 to 30, PEACOCK),
-            event("Yoga", "Yoga", 15, 18 to 30, 19 to 30, SAGE),
-            allDay("Mum's birthday", "Compleanno della mamma", 15, 1, BANANA),
-            event("Gym", "Palestra", 16, 7 to 0, 8 to 0, SAGE),
-            event("Sprint planning", "Pianificazione sprint", 16, 11 to 0, 12 to 0, PEACOCK),
-            event("Dinner with friends", "Cena con amici", 16, 20 to 0, 22 to 30, GRAPE),
-            allDay("Weekend in Rome", "Weekend a Roma", 17, 2, FLAMINGO),
-            event("Football", "Calcetto", 17, 10 to 0, 11 to 30, SAGE),
-            event("Groceries", "Spesa", 17, 17 to 0, 18 to 0, TANGERINE),
-            event("Brunch", "Brunch", 18, 11 to 0, 12 to 30, GRAPE),
-            event("Reading", "Lettura", 18, 21 to 0, 22 to 0, LAVENDER),
-        )
+        val configuration = Configuration(targetContext.resources.configuration).apply { setLocale(language.locale) }
+        val resources = targetContext.createConfigurationContext(configuration).resources
+        return SampleAgenda.events(LocalDate.of(2026, 10, 12), zone) { resources.getString(it.stringId) }
     }
 
     private fun gradient(width: Int, height: Int, from: Int, to: Int) = Paint().apply {
@@ -228,15 +187,6 @@ class StoreGraphics {
     }
 
     private companion object {
-        // Google Calendar colors, as the calendar provider gives them.
-        const val PEACOCK = 0xFF039BE5.toInt()
-        const val SAGE = 0xFF33B679.toInt()
-        const val LAVENDER = 0xFF7986CB.toInt()
-        const val FLAMINGO = 0xFFE67C73.toInt()
-        const val GRAPE = 0xFF8E24AA.toInt()
-        const val TANGERINE = 0xFFF4511E.toInt()
-        const val BANANA = 0xFFF6BF26.toInt()
-
         const val BLUE = 0xFF1A73E8.toInt()
         const val DARK_BLUE = 0xFF0B47A1.toInt()
         const val DARK_TOP = 0xFF1E2A4A.toInt()

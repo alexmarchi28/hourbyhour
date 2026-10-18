@@ -2,6 +2,7 @@ package it.hourbyhour
 
 import android.app.Instrumentation
 import android.content.Context
+import android.content.res.Configuration
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
@@ -20,6 +21,15 @@ val targetContext: Context get() = instrumentation.targetContext
  */
 fun flushWidgetSettings() {
     targetContext.getSharedPreferences(WidgetSettingsStore.FILE_NAME, Context.MODE_PRIVATE).edit().commit()
+}
+
+/** The app in the light or dark theme, whatever the theme of the phone. */
+fun themedContext(dark: Boolean): Context {
+    val configuration = Configuration(targetContext.resources.configuration).apply {
+        uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+            if (dark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+    }
+    return targetContext.createConfigurationContext(configuration)
 }
 
 /** Runs [block] on the main thread, where views live, and returns its result. */
