@@ -71,6 +71,7 @@
         <item quantity="one">%d day from Monday</item>
         <item quantity="other">%d days from Monday</item>
     </plurals>
+    <string name="summary_hours">hours %1$d–%2$d</string>
     <plurals name="summary_calendars">
         <item quantity="one">%d calendar</item>
         <item quantity="other">%d calendars</item>

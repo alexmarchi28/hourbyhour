@@ -2,6 +2,7 @@ package it.hourbyhour
 
 import it.hourbyhour.SettingSummary.Calendars
 import it.hourbyhour.SettingSummary.Days
+import it.hourbyhour.SettingSummary.Hours
 import it.hourbyhour.SettingSummary.NoBirthdays
 import it.hourbyhour.SettingSummary.Transparency
 import org.junit.Assert.assertEquals
@@ -59,10 +60,30 @@ class WidgetSummaryTest {
     }
 
     @Test
-    fun everythingComesInAFixedOrder() {
-        val settings = WidgetSettings(transparency = 100, dayCount = 5, startOnMonday = true, calendarIds = setOf(2L), showBirthdays = false)
+    fun customHoursAreMentioned() {
+        assertEquals(listOf(Days(3, false), Hours(7, 19)), WidgetSettings(customHours = true, hours = HourRange(7, 19)).summary(calendars))
+        // The default hours too: they are chosen, no longer fitted to the events.
+        assertEquals(listOf(Days(3, false), Hours(8, 20)), WidgetSettings(customHours = true).summary(calendars))
+    }
 
-        assertEquals(listOf(Days(5, true), Calendars(1), NoBirthdays, Transparency(100)), settings.summary(calendars))
+    @Test
+    fun hoursKeptWhileCustomHoursAreOffAreNotMentioned() {
+        assertEquals(listOf(Days(3, false)), WidgetSettings(customHours = false, hours = HourRange(7, 19)).summary(calendars))
+    }
+
+    @Test
+    fun everythingComesInAFixedOrder() {
+        val settings = WidgetSettings(
+            transparency = 100,
+            dayCount = 5,
+            startOnMonday = true,
+            calendarIds = setOf(2L),
+            showBirthdays = false,
+            customHours = true,
+            hours = HourRange(6, 22),
+        )
+
+        assertEquals(listOf(Days(5, true), Hours(6, 22), Calendars(1), NoBirthdays, Transparency(100)), settings.summary(calendars))
     }
 
     @Test

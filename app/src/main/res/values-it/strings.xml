@@ -63,6 +63,7 @@
         <item quantity="many">%d giorni da lunedì</item>
         <item quantity="other">%d giorni da lunedì</item>
     </plurals>
+    <string name="summary_hours">ore %1$d–%2$d</string>
     <plurals name="summary_calendars">
         <item quantity="one">%d calendario</item>
         <item quantity="many">%d calendari</item>

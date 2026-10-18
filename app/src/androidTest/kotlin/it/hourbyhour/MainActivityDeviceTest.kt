@@ -44,12 +44,13 @@ class MainActivityDeviceTest {
 
     @Test
     fun eachWidgetIsListedWithItsSettings() {
-        val placed = placeWidget(WidgetSettings(dayCount = 7, startOnMonday = true, showBirthdays = false))
+        val placed = placeWidget(WidgetSettings(dayCount = 7, startOnMonday = true, showBirthdays = false, customHours = true, hours = HourRange(7, 19)))
 
         withWidgetListed(placed) { _, activity ->
             val texts = onMain { activity.entry(placed.id)!!.descendants().filterIsInstance<TextView>().joinToString(" ") { it.text } }
             assertTrue(texts, targetContext.resources.getQuantityString(R.plurals.summary_days_from_monday, 7, 7) in texts)
             assertTrue(texts, targetContext.getString(R.string.summary_no_birthdays) in texts)
+            assertTrue(texts, targetContext.getString(R.string.summary_hours, 7, 19) in texts)
             assertEquals(View.VISIBLE, onMain { activity.findViewById<View>(R.id.widgets_section).visibility })
         }
     }
