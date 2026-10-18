@@ -23,4 +23,23 @@
     <string name="birthdays">Compleanni</string>
     <string name="no_calendars">Nessun calendario sincronizzato sul telefono.</string>
     <string name="done">Fatto</string>
+
+    <string name="sample_stand_up">Stand-up</string>
+    <string name="sample_gym">Palestra</string>
+    <string name="sample_project_review">Revisione del progetto</string>
+    <string name="sample_call_with_marco">Chiamata con Marco</string>
+    <string name="sample_dentist">Dentista</string>
+    <string name="sample_lunch_with_anna">Pranzo con Anna</string>
+    <string name="sample_yoga">Yoga</string>
+    <string name="sample_design_workshop">Workshop di design</string>
+    <string name="sample_pick_up_the_kids">Prendere i bambini</string>
+    <string name="sample_client_meeting">Incontro con il cliente</string>
+    <string name="sample_mums_birthday">Compleanno della mamma</string>
+    <string name="sample_sprint_planning">Pianificazione sprint</string>
+    <string name="sample_dinner_with_friends">Cena con amici</string>
+    <string name="sample_weekend_in_rome">Weekend a Roma</string>
+    <string name="sample_football">Calcetto</string>
+    <string name="sample_groceries">Spesa</string>
+    <string name="sample_brunch">Brunch</string>
+    <string name="sample_reading">Lettura</string>
 </resources>

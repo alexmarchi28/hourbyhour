@@ -27,4 +27,24 @@
     <string name="birthdays">Birthdays</string>
     <string name="no_calendars">No calendars synced to the phone.</string>
     <string name="done">Done</string>
+
+    <!-- Made-up events (SampleAgenda): the widget picker preview and the store pictures. Never the real calendar. -->
+    <string name="sample_stand_up">Stand-up</string>
+    <string name="sample_gym">Gym</string>
+    <string name="sample_project_review">Project review</string>
+    <string name="sample_call_with_marco">Call with Marco</string>
+    <string name="sample_dentist">Dentist</string>
+    <string name="sample_lunch_with_anna">Lunch with Anna</string>
+    <string name="sample_yoga">Yoga</string>
+    <string name="sample_design_workshop">Design workshop</string>
+    <string name="sample_pick_up_the_kids">Pick up the kids</string>
+    <string name="sample_client_meeting">Client meeting</string>
+    <string name="sample_mums_birthday">Mum\'s birthday</string>
+    <string name="sample_sprint_planning">Sprint planning</string>
+    <string name="sample_dinner_with_friends">Dinner with friends</string>
+    <string name="sample_weekend_in_rome">Weekend in Rome</string>
+    <string name="sample_football">Football</string>
+    <string name="sample_groceries">Groceries</string>
+    <string name="sample_brunch">Brunch</string>
+    <string name="sample_reading">Reading</string>
 </resources>
