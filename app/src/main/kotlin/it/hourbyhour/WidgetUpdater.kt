@@ -21,7 +21,7 @@ object WidgetUpdater {
         if (!CalendarSource.hasPermission(context)) return null
         val zone = ZoneId.systemDefault()
         val now = ZonedDateTime.now(zone)
-        val (begin, end) = queryWindow(Agenda.firstDay(now.toLocalDate()), Agenda.DAYS, zone)
+        val (begin, end) = queryWindow(mondayOf(now.toLocalDate()), Agenda.DAYS, zone)
         return Agenda(CalendarSource.load(context, begin, end), now)
     }
 

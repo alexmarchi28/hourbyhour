@@ -38,10 +38,12 @@ Prima di aggiungere una dipendenza, chiedi.
 ## Architettura
 
 ```
-Timeline.kt           logica pura, testata su JVM: Agenda (eventi letti), eventi → giorni, fascia oraria, colonne per le sovrapposizioni
+CalendarEvent.kt      modelli letti dal calendario: CalendarEvent, CalendarInfo
+Agenda.kt             logica pura, testata su JVM: Agenda (eventi letti), Snapshot (cosa mostra un widget), mondayOf
+Timeline.kt           logica pura, testata su JVM: eventi → giorni, fascia oraria, colonne per le sovrapposizioni
 GoogleColors.kt       logica pura, testata su JVM: colori del provider → colori mostrati da Google Calendar
 WidgetLayout.kt       logica pura, testata su JVM: cosa mostra il widget e dove (frazioni delle colonne)
-EventColors.kt        logica pura, testata su JVM: colori di riempimento e testo degli eventi, per tema
+EventColors.kt        logica pura, testata su JVM: colori di riempimento e testo degli eventi, per tema; withAlpha
 WidgetSettings.kt     logica pura, testata su JVM: impostazioni di un widget (trasparenza, numero di giorni, partenza da lunedì, calendari, fascia oraria)
 SampleAgenda.kt       logica pura, testata su JVM: una settimana di eventi inventati (selettore dei widget e scheda dello store)
 WidgetSummary.kt      logica pura, testata su JVM: descrizione breve di ogni widget e numerazione, per l'elenco nell'app
@@ -59,7 +61,7 @@ WidgetPickerPreview.kt  anteprima nel selettore dei widget del launcher, con gli
 CalendarIntents.kt    intent che aprono l'app calendario su un evento o un giorno
 ```
 
-`Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt`, `WidgetSettings.kt`, `SampleAgenda.kt` e `WidgetSummary.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni e la fascia oraria di ogni widget) → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
+`CalendarEvent.kt`, `Agenda.kt`, `Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt`, `WidgetSettings.kt`, `SampleAgenda.kt` e `WidgetSummary.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni e la fascia oraria di ogni widget) → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
 
 Il calendario si legge **una volta** per due settimane da lunedì (`Agenda.DAYS`), una finestra che copre ogni impostazione possibile (fino a 7 giorni da oggi, o la settimana da lunedì, questa o la prossima); ogni widget e l'anteprima ne prendono i propri giorni senza rileggere il calendario. La fascia oraria si calcola solo sui giorni mostrati.
 

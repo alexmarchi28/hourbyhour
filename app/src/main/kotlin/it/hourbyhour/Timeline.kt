@@ -1,65 +1,15 @@
 package it.hourbyhour
 
 import java.time.Instant
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.time.ZonedDateTime
-import java.time.temporal.TemporalAdjusters
-
-/** An event instance as read from the calendar provider. Times are epoch millis. */
-data class CalendarEvent(
-    val title: String,
-    val begin: Long,
-    val end: Long,
-    val allDay: Boolean,
-    val color: Int,
-    /** The calendar the event belongs to, as in the calendar provider. */
-    val calendarId: Long = 0,
-    /** The event in the calendar provider; occurrences of a recurring event share it. */
-    val eventId: Long = 0,
-    /**
-     * A birthday of a contact, which Google Calendar puts in the primary calendar but shows as a
-     * calendar of its own ("Birthdays"), with its own color.
-     */
-    val birthday: Boolean = false,
-)
-
-/** A calendar of the phone whose events are synced, as offered in the widget settings. */
-data class CalendarInfo(val id: Long, val name: String, val color: Int)
 
 /** The part of a timed event that falls on one day, in minutes from midnight (0..1440). */
 data class Segment(val event: CalendarEvent, val startMinute: Int, val endMinute: Int)
 
 /** A segment drawn in [column] of [columns] side-by-side columns, so overlapping events stay visible. */
 data class PlacedSegment(val segment: Segment, val column: Int, val columns: Int)
-
-/** What the widget shows: the days with their events and the [hours] of the grid, as seen at [now]. */
-data class Snapshot(val days: List<Day>, val now: ZonedDateTime, val hours: HourRange = hourRange(days))
-
-/**
- * The events read from the calendar at [now], for the current and the next week: every widget (and
- * the preview, while settings change) takes its days from here without reading the calendar again.
- */
-data class Agenda(val events: List<CalendarEvent>, val now: ZonedDateTime) {
-    fun snapshot(settings: WidgetSettings): Snapshot {
-        val firstDay = settings.firstDay(now.toLocalDate())
-        val shown = events.filter { settings.shows(it) }
-        val days = splitIntoDays(shown, firstDay, settings.dayCount, now.zone)
-        return Snapshot(days, now, hourRange(days, settings.minimumHours))
-    }
-
-    companion object {
-        /**
-         * Two weeks from Monday of the current week cover every setting: up to seven days from
-         * today, and a week from Monday, this one or the next.
-         */
-        const val DAYS = 14
-
-        fun firstDay(today: LocalDate): LocalDate = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    }
-}
 
 /** One column of the widget. [allDay] holds the events shown in the banner row above the grid. */
 data class Day(val date: LocalDate, val allDay: List<CalendarEvent>, val timed: List<Segment>)
@@ -73,6 +23,11 @@ data class HourRange(val start: Int, val end: Int) {
 
     /** The range up to [hour], with the start moved earlier when needed to keep at least an hour. */
     fun endingAt(hour: Int) = HourRange(minOf(start, hour - 1), hour)
+
+    companion object {
+        /** The hours shown without timed events. */
+        val WITHOUT_EVENTS = HourRange(8, 20)
+    }
 }
 
 private const val MINUTES_PER_DAY = 24 * 60
@@ -141,7 +96,7 @@ private fun minuteOfDay(millis: Long, dayEnd: Long, zone: ZoneId): Int {
  * events outside them, so that no event is hidden. Without it, the hours are widened to at least
  * [minHours] so a single short event does not fill the whole widget, and are [default] without events.
  */
-fun hourRange(days: List<Day>, minimum: HourRange? = null, minHours: Int = 6, default: HourRange = HourRange(8, 20)): HourRange {
+fun hourRange(days: List<Day>, minimum: HourRange? = null, minHours: Int = 6, default: HourRange = HourRange.WITHOUT_EVENTS): HourRange {
     val segments = days.flatMap { it.timed }
     if (segments.isEmpty()) return minimum ?: default
     var start = segments.minOf { it.startMinute } / 60

@@ -286,10 +286,17 @@ class TimelineTest {
     }
 
     @Test
+    fun mondayOfIsTheMondayOfTheSameWeek() {
+        assertEquals(today, mondayOf(today))
+        assertEquals(today, mondayOf(today.plusDays(6)))
+        assertEquals(today.plusWeeks(1), mondayOf(today.plusDays(7)))
+    }
+
+    @Test
     fun agendaCoversEverySettingOnEveryDayOfTheWeek() {
         for (offset in 0L..6L) {
             val day = today.plusDays(offset)
-            val agendaStart = Agenda.firstDay(day)
+            val agendaStart = mondayOf(day)
             val agendaEnd = agendaStart.plusDays(Agenda.DAYS.toLong())
             for (days in 1..WidgetSettings.MAX_DAY_COUNT) {
                 for (fromMonday in listOf(false, true)) {
