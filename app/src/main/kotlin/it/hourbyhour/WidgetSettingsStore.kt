@@ -19,7 +19,17 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
         calendarIds = preferences.getStringSet(calendarsKey(widgetId), null)?.mapNotNull { it.toLongOrNull() }?.toSet(),
         // Widgets saved before birthdays could be chosen show them, like every calendar at first.
         showBirthdays = preferences.getBoolean(birthdaysKey(widgetId), true),
+        // Widgets saved before hours could be chosen fit them to the events.
+        customHours = preferences.getBoolean(customHoursKey(widgetId), false),
+        hours = loadHours(widgetId),
     )
+
+    /** The saved hours brought back within a day, with the end after the start as when choosing them. */
+    private fun loadHours(widgetId: Int): HourRange {
+        val start = preferences.getInt(hoursFromKey(widgetId), WidgetSettings.DEFAULT_HOURS.start).coerceIn(0, 23)
+        val end = preferences.getInt(hoursToKey(widgetId), WidgetSettings.DEFAULT_HOURS.end).coerceIn(1, 24)
+        return HourRange(start, end).startingAt(start)
+    }
 
     fun save(widgetId: Int, settings: WidgetSettings) {
         val editor = preferences.edit()
@@ -27,6 +37,9 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
             .putInt(dayCountKey(widgetId), settings.dayCount)
             .putBoolean(startOnMondayKey(widgetId), settings.startOnMonday)
             .putBoolean(birthdaysKey(widgetId), settings.showBirthdays)
+            .putBoolean(customHoursKey(widgetId), settings.customHours)
+            .putInt(hoursFromKey(widgetId), settings.hours.start)
+            .putInt(hoursToKey(widgetId), settings.hours.end)
         val calendarIds = settings.calendarIds
         if (calendarIds == null) {
             editor.remove(calendarsKey(widgetId))
@@ -50,9 +63,20 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) {
     private fun startOnMondayKey(widgetId: Int) = "from_monday_$widgetId"
     private fun calendarsKey(widgetId: Int) = "calendars_$widgetId"
     private fun birthdaysKey(widgetId: Int) = "birthdays_$widgetId"
+    private fun customHoursKey(widgetId: Int) = "custom_hours_$widgetId"
+    private fun hoursFromKey(widgetId: Int) = "hours_from_$widgetId"
+    private fun hoursToKey(widgetId: Int) = "hours_to_$widgetId"
 
-    private fun keys(widgetId: Int) =
-        listOf(transparencyKey(widgetId), dayCountKey(widgetId), startOnMondayKey(widgetId), calendarsKey(widgetId), birthdaysKey(widgetId))
+    private fun keys(widgetId: Int) = listOf(
+        transparencyKey(widgetId),
+        dayCountKey(widgetId),
+        startOnMondayKey(widgetId),
+        calendarsKey(widgetId),
+        birthdaysKey(widgetId),
+        customHoursKey(widgetId),
+        hoursFromKey(widgetId),
+        hoursToKey(widgetId),
+    )
 
     companion object {
         const val FILE_NAME = "widget_settings"
