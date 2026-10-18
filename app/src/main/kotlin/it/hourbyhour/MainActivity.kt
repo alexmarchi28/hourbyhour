@@ -13,6 +13,7 @@ import android.provider.Settings
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import kotlin.concurrent.thread
 
 /** Asks for calendar access, offers to add the widget, shows a preview of it and links the privacy policy. */
 class MainActivity : Activity() {
@@ -41,6 +42,8 @@ class MainActivity : Activity() {
             visibility = if (widgets.isRequestPinAppWidgetSupported) View.VISIBLE else View.GONE
             setOnClickListener { widgets.requestPinAppWidget(ComponentName(context, HourByHourWidget::class.java), null, null) }
         }
+        // Also when no widget is on the home screen yet: that is when the picker preview matters.
+        thread { WidgetPickerPreview.publishIfNeeded(applicationContext) }
         findViewById<Button>(R.id.privacy_policy).setOnClickListener {
             try {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY_URL)))
