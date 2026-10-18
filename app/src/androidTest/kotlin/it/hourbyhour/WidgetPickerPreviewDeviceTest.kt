@@ -61,11 +61,9 @@ class WidgetPickerPreviewDeviceTest {
     fun thePreviewLayoutPlacesEventsByTheirTimes() {
         val root = show(RemoteViews(targetContext.packageName, R.layout.widget_preview))
 
-        fun top(title: Int) = onMain {
-            val view = root.descendants().filterIsInstance<TextView>().single { it.text == string(title) }
-            IntArray(2).also { view.getLocationInWindow(it) }[1]
-        }
-        val hours = onMain { root.childrenOf(R.id.preview_hours).map { IntArray(2).also { row -> it.getLocationInWindow(row) }[1] } }
+        fun top(title: Int) = onMain { rectIn(root, root.descendants().filterIsInstance<TextView>().single { it.text == string(title) }).top }
+        val hours = onMain { root.childrenOf(R.id.preview_hours).map { rectIn(root, it).top } }
+        assertTrue("The hours are apart: $hours", hours.zipWithNext().all { (a, b) -> b - a > 10 * density })
         // The grid starts at 9: the dentist at 11 and the lunch at 12:30.
         assertEquals(hours[2].toFloat(), top(R.string.sample_dentist).toFloat(), 2 * density)
         assertEquals((hours[3] + hours[4]) / 2f, top(R.string.sample_lunch_with_anna).toFloat(), 2 * density)
