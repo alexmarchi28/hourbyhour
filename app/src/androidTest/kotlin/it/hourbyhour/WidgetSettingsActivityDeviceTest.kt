@@ -3,6 +3,7 @@ package it.hourbyhour
 import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Intent
+import android.os.SystemClock
 import android.view.View
 import android.widget.CheckBox
 import android.widget.SeekBar
@@ -56,6 +57,20 @@ class WidgetSettingsActivityDeviceTest {
         it.findViewById<SeekBar>(id).progress = progress
     }
 
+    /**
+     * Runs [close] on the activity and waits for it to be destroyed. ActivityScenario.close() would otherwise
+     * find it still on its way out and finish it again, waiting up to 45 s for helper activities.
+     */
+    private fun ActivityScenario<WidgetSettingsActivity>.leave(close: (WidgetSettingsActivity) -> Unit) {
+        onActivity(close)
+        val deadline = SystemClock.uptimeMillis() + 10_000
+        // state throws while the activity is between two lifecycle steps.
+        while (runCatching { state }.getOrNull() != Lifecycle.State.DESTROYED) {
+            if (SystemClock.uptimeMillis() > deadline) throw AssertionError("Timed out waiting for the settings to close")
+            Thread.sleep(50)
+        }
+    }
+
     private fun ActivityScenario<WidgetSettingsActivity>.calendarBoxes(): List<CheckBox> {
         val container = view<View>(R.id.calendars)
         waitFor("the calendars") { container.childrenOf(R.id.calendars).isNotEmpty() }
@@ -101,7 +116,7 @@ class WidgetSettingsActivityDeviceTest {
 
         open().use { scenario ->
             scenario.onActivity { it.findViewById<View>(R.id.start_on_monday).performClick() }
-            scenario.onActivity { it.findViewById<View>(R.id.done).performClick() }
+            scenario.leave { it.findViewById<View>(R.id.done).performClick() }
 
             assertEquals(Activity.RESULT_OK, scenario.result.resultCode)
         }
@@ -161,7 +176,7 @@ class WidgetSettingsActivityDeviceTest {
             scenario.onActivity { it.findViewById<View>(R.id.custom_hours).performClick() }
             scenario.slide(R.id.hours_from, 7)
             scenario.slide(R.id.hours_to, 19)
-            scenario.onActivity { it.findViewById<View>(R.id.done).performClick() }
+            scenario.leave { it.findViewById<View>(R.id.done).performClick() }
 
             assertEquals(Activity.RESULT_OK, scenario.result.resultCode)
         }
@@ -188,7 +203,7 @@ class WidgetSettingsActivityDeviceTest {
             val birthdays = scenario.birthdaysBox()
             assumeTrue("No calendars on the phone", birthdays.text == targetContext.getString(R.string.birthdays))
             onMain { birthdays.performClick() }
-            scenario.onActivity { it.findViewById<View>(R.id.done).performClick() }
+            scenario.leave { it.findViewById<View>(R.id.done).performClick() }
 
             assertEquals(Activity.RESULT_OK, scenario.result.resultCode)
         }
@@ -218,7 +233,7 @@ class WidgetSettingsActivityDeviceTest {
             scenario.slide(R.id.day_count, 6)
             val boxes = scenario.calendarBoxes()
             onMain { boxes.first().performClick() }
-            scenario.onActivity { it.findViewById<View>(R.id.done).performClick() }
+            scenario.leave { it.findViewById<View>(R.id.done).performClick() }
 
             assertEquals(Activity.RESULT_OK, scenario.result.resultCode)
             assertEquals(widget.id, scenario.result.resultData.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 0))
@@ -236,7 +251,7 @@ class WidgetSettingsActivityDeviceTest {
     fun leavingWithoutDoneKeepsTheSettings() {
         open().use { scenario ->
             scenario.slide(R.id.transparency, 10)
-            scenario.onActivity { it.finish() }
+            scenario.leave { it.finish() }
 
             assertEquals(Activity.RESULT_CANCELED, scenario.result.resultCode)
         }
