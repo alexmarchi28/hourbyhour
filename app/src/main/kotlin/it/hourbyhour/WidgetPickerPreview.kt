@@ -8,6 +8,7 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.util.Log
 import android.widget.RemoteViews
+import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Locale
@@ -32,10 +33,10 @@ object WidgetPickerPreview {
      * app, in another language or on another day (the preview shows dates). Android allows only a
      * few previews per hour, so it is not done on every redraw of the widgets.
      */
-    fun publishIfNeeded(context: Context) {
+    fun publishIfNeeded(context: Context, clock: Clock = Clock.systemDefaultZone()) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return
-        val zone = ZoneId.systemDefault()
-        val today = LocalDate.now(zone)
+        val zone = clock.zone
+        val today = LocalDate.now(clock)
         val stamp = PickerPreviewStamp(
             installedAt = context.packageManager.getPackageInfo(context.packageName, 0).lastUpdateTime,
             language = Locale.getDefault().toLanguageTag(),

@@ -64,16 +64,6 @@ fun splitIntoDays(events: List<CalendarEvent>, firstDay: LocalDate, dayCount: In
         Day(date, allDay, timed.sortedWith(compareBy<Segment> { it.startMinute }.thenByDescending { it.endMinute }))
     }
 
-/**
- * The time span to query for [dayCount] days from [firstDay], as epoch millis [first, second). It has
- * one extra day on each side: all-day events are stored at UTC midnights and can start or end outside
- * the local days. [splitIntoDays] keeps only what falls on the shown days.
- */
-fun queryWindow(firstDay: LocalDate, dayCount: Int, zone: ZoneId): Pair<Long, Long> = Pair(
-    firstDay.minusDays(1).atStartOfDay(zone).toInstant().toEpochMilli(),
-    firstDay.plusDays(dayCount + 1L).atStartOfDay(zone).toInstant().toEpochMilli(),
-)
-
 private fun isBanner(event: CalendarEvent) = event.allDay || event.end - event.begin >= MILLIS_PER_DAY
 
 /** All-day events are stored at UTC midnights, so their dates must be read in UTC. */

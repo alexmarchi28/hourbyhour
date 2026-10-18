@@ -39,7 +39,7 @@ Prima di aggiungere una dipendenza, chiedi.
 
 ```
 CalendarEvent.kt      modelli letti dal calendario: CalendarEvent, CalendarInfo
-Agenda.kt             logica pura, testata su JVM: Agenda (eventi letti), Snapshot (cosa mostra un widget), mondayOf
+Agenda.kt             logica pura, testata su JVM: Agenda (eventi letti e finestra di lettura), Snapshot (cosa mostra un widget), mondayOf
 Timeline.kt           logica pura, testata su JVM: eventi → giorni, fascia oraria, colonne per le sovrapposizioni
 GoogleColors.kt       logica pura, testata su JVM: colori del provider → colori mostrati da Google Calendar
 WidgetLayout.kt       logica pura, testata su JVM: cosa mostra il widget e dove (frazioni delle colonne)
@@ -63,7 +63,7 @@ CalendarIntents.kt    intent che aprono l'app calendario su un evento o un giorn
 
 `CalendarEvent.kt`, `Agenda.kt`, `Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt`, `WidgetSettings.kt`, `SampleAgenda.kt` e `WidgetSummary.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `CalendarSource` → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni e la fascia oraria di ogni widget) → `layoutWidget` → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
 
-Il calendario si legge **una volta** per due settimane da lunedì (`Agenda.DAYS`), una finestra che copre ogni impostazione possibile (fino a 7 giorni da oggi, o la settimana da lunedì, questa o la prossima); ogni widget e l'anteprima ne prendono i propri giorni senza rileggere il calendario. La fascia oraria si calcola solo sui giorni mostrati.
+Il calendario si legge **una volta** per due settimane da lunedì (`Agenda.DAYS`, `Agenda.window`), una finestra che copre ogni impostazione possibile (fino a 7 giorni da oggi, o la settimana da lunedì, questa o la prossima); ogni widget e l'anteprima ne prendono i propri giorni senza rileggere il calendario. La fascia oraria si calcola solo sui giorni mostrati.
 
 **Non rinominare `HourByHourWidget` né il package `it.hourbyhour`** (né l'`applicationId`): il nome della classe identifica il widget per il launcher, e cambiarlo fa sparire i widget già aggiunti alla Home; l'`applicationId` non si può cambiare dopo la pubblicazione sul Play Store. Sono stati rinominati una sola volta, da `ThreeDaysWidget`/`it.tregiorni`, prima di qualsiasi pubblicazione.
 
@@ -157,6 +157,7 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
 - I colori attesi nei test di `GoogleColors` vengono da screenshot reali o da un'implementazione indipendente: non rigenerarli dal codice Kotlin, altrimenti il test non verifica più niente.
 - I test girano sulla JVM, dove le classi Android esistono solo come stub che lanciano eccezioni. Per testare codice che tocca Android:
   - le decisioni stanno in funzioni senza tipi Android, anche dentro i file Android: `nextRefreshTime` ed `estimatedSize` (`WidgetUpdater.kt`), `calendarUri` (`CalendarIntents.kt`), `spanWeightSums` (`WidgetViews.kt`);
+  - l'ora arriva da un `java.time.Clock` (`Agenda.read`, `WidgetUpdater.update`, `WidgetPickerPreview.publishIfNeeded`), predefinito quello di sistema: nei test si usa `Clock.fixed`;
   - le interfacce Android si sostituiscono con finti in memoria: `FakeSharedPreferences` per `WidgetSettingsStore`, `fakeCursor` per le righe lette da `CalendarSource` (ha solo le colonne della query, come il provider).
 - Il resto si prova sul telefono, con i test in `app/src/androidTest` (girano nel processo dell'app):
   - `WidgetViewsDeviceTest`: le RemoteViews applicate, misurate e disposte come in un launcher (posizioni, titoli, intestazioni, tocchi). I tocchi mandano broadcast di prova invece di aprire il calendario.

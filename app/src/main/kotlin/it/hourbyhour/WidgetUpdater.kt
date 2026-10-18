@@ -8,8 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.RemoteViews
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import java.time.Clock
 import java.util.Locale
 
 /** Loads the events, builds the widget views and pushes them to the widgets on the home screen. */
@@ -17,12 +16,9 @@ object WidgetUpdater {
     private const val TAG = "HourByHour"
 
     /** The events of the current and next week, or null when calendar access has not been granted. */
-    fun loadAgenda(context: Context): Agenda? {
+    fun loadAgenda(context: Context, clock: Clock = Clock.systemDefaultZone()): Agenda? {
         if (!CalendarSource.hasPermission(context)) return null
-        val zone = ZoneId.systemDefault()
-        val now = ZonedDateTime.now(zone)
-        val (begin, end) = queryWindow(mondayOf(now.toLocalDate()), Agenda.DAYS, zone)
-        return Agenda(CalendarSource.load(context, begin, end), now)
+        return Agenda.read(clock) { begin, end -> CalendarSource.load(context, begin, end) }
     }
 
     /** The widget content, or a message asking for calendar access when [agenda] is null. Previews are not [clickable]. */
@@ -42,10 +38,10 @@ object WidgetUpdater {
         return ids.isNotEmpty()
     }
 
-    fun update(context: Context, manager: AppWidgetManager, widgetIds: IntArray) {
+    fun update(context: Context, manager: AppWidgetManager, widgetIds: IntArray, clock: Clock = Clock.systemDefaultZone()) {
         if (widgetIds.isEmpty()) return
         try {
-            val agenda = loadAgenda(context)
+            val agenda = loadAgenda(context, clock)
             val store = WidgetSettingsStore(context)
             drawEach(
                 widgetIds,
@@ -64,10 +60,10 @@ object WidgetUpdater {
             // crashing the app in the background.
             Log.e(TAG, "Widget update failed", e)
         } finally {
-            scheduleRefresh(context)
+            scheduleRefresh(context, clock)
             CalendarChangeJob.ensureScheduled(context)
             // The picker preview shows dates: a new one on the first redraw of the day.
-            WidgetPickerPreview.publishIfNeeded(context)
+            WidgetPickerPreview.publishIfNeeded(context, clock)
         }
     }
 
@@ -79,8 +75,8 @@ object WidgetUpdater {
      * Redraws at the next quarter hour, so the current-time line moves and the days roll over at
      * midnight. RTC (not RTC_WAKEUP) never wakes the phone: a sleeping phone redraws when it wakes up.
      */
-    private fun scheduleRefresh(context: Context) {
-        val next = nextRefreshTime(System.currentTimeMillis())
+    private fun scheduleRefresh(context: Context, clock: Clock) {
+        val next = nextRefreshTime(clock.millis())
         context.getSystemService(AlarmManager::class.java).set(AlarmManager.RTC, next, refreshIntent(context))
     }
 
