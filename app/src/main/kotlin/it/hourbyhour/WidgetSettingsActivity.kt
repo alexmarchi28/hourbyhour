@@ -166,9 +166,7 @@ class WidgetSettingsActivity : Activity() {
 
     private fun save() {
         store.save(widgetId, settings)
-        val context = applicationContext
-        val id = widgetId
-        thread { WidgetUpdater.update(context, AppWidgetManager.getInstance(context), intArrayOf(id)) }
+        HourByHourWidget.redraw(applicationContext, intArrayOf(widgetId))
         setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId))
         finish()
     }

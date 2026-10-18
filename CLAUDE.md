@@ -139,7 +139,7 @@ Nel widget ogni colore di evento si imposta per **entrambi i temi** (`setColorSt
 - Il launcher può riapplicare le nuove `RemoteViews` sopra quelle vecchie invece di ricrearle: i contenitori riempiti a runtime vanno svuotati con `removeAllViews` e devono contenere **solo** view aggiunte a runtime.
 - Colori statici in `values/colors.xml` e `values-night/colors.xml`: il widget segue subito il tema di sistema. In codice si impostano solo i colori degli eventi, con una variante per tema (vedi "Colori degli eventi").
 
-Aggiornamenti: alla aggiunta e al ridimensionamento del widget, quando cambia il calendario (job con trigger sul content URI, che si riprogramma dopo ogni esecuzione), e ogni quarto d'ora con un allarme `RTC` che non sveglia il telefono (sposta la linea dell'ora e cambia giorno a mezzanotte). `updatePeriodMillis` (30 min) è solo una rete di sicurezza.
+Aggiornamenti: alla aggiunta e al ridimensionamento del widget, quando cambia il calendario (job con trigger sul content URI, che si riprogramma dopo ogni esecuzione), e ogni quarto d'ora con un allarme `RTC` che non sveglia il telefono (sposta la linea dell'ora e cambia giorno a mezzanotte). `updatePeriodMillis` (30 min) è solo una rete di sicurezza. Un widget che fallisce tiene il contenuto di prima e non ferma gli altri (`drawEach`). Le schermate chiedono il ridisegno al provider (`HourByHourWidget.redraw`), che lavora con `goAsync`: un thread avviato da un'attività che si chiude può morire con il processo.
 
 ## Verifica sul telefono
 
