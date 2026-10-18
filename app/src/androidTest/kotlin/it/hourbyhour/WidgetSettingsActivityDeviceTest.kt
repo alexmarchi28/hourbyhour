@@ -248,6 +248,42 @@ class WidgetSettingsActivityDeviceTest {
     }
 
     @Test
+    fun changesNotSavedYetSurviveTheScreenBeingRecreated() {
+        // Birthdays come last, after the calendars, whenever the phone has some.
+        var hasCalendars = false
+        // As when the phone rotates or switches to the dark theme with the screen open.
+        open().use { scenario ->
+            scenario.slide(R.id.transparency, 10)
+            scenario.slide(R.id.day_count, 5)
+            scenario.onActivity { it.findViewById<View>(R.id.custom_hours).performClick() }
+            scenario.slide(R.id.hours_from, 7)
+            val boxes = scenario.calendarBoxes()
+            hasCalendars = boxes.isNotEmpty()
+            if (hasCalendars) onMain { boxes.last().performClick() }
+
+            scenario.recreate()
+
+            assertEquals("50%", scenario.text(R.id.transparency_value))
+            assertEquals("6", scenario.text(R.id.day_count_value))
+            assertEquals("7:00", scenario.text(R.id.hours_from_value))
+            assertTrue(scenario.read { it.findViewById<Switch>(R.id.custom_hours).isChecked })
+            assertTrue(scenario.read { it.findViewById<SeekBar>(R.id.hours_from).isEnabled })
+            assertEquals(7, scenario.read { it.findViewById<SeekBar>(R.id.hours_from).progress })
+            if (hasCalendars) {
+                val birthdays = scenario.calendarBoxes().last()
+                assertFalse(onMain { birthdays.isChecked })
+            }
+            scenario.leave { it.findViewById<View>(R.id.done).performClick() }
+        }
+        val saved = store.load(widget.id)
+        assertEquals(50, saved.transparency)
+        assertEquals(6, saved.dayCount)
+        assertEquals(HourRange(7, 20), saved.hours)
+        assertTrue(saved.customHours)
+        assertEquals(!hasCalendars, saved.showBirthdays)
+    }
+
+    @Test
     fun leavingWithoutDoneKeepsTheSettings() {
         open().use { scenario ->
             scenario.slide(R.id.transparency, 10)

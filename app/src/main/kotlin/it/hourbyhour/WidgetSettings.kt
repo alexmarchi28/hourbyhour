@@ -1,9 +1,13 @@
 package it.hourbyhour
 
+import java.io.Serializable
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
-/** The preferences of one widget, chosen in WidgetSettingsActivity. */
+/**
+ * The preferences of one widget, chosen in WidgetSettingsActivity. Serializable for the saved state
+ * of that screen; on disk they are kept by WidgetSettingsStore, key by key.
+ */
 data class WidgetSettings(
     /** Transparency of the widget background in percent: 0 is opaque, 100 shows only the events. */
     val transparency: Int = DEFAULT_TRANSPARENCY,
@@ -19,7 +23,7 @@ data class WidgetSettings(
     val customHours: Boolean = false,
     /** The hours chosen for the grid, kept while [customHours] is off. */
     val hours: HourRange = DEFAULT_HOURS,
-) {
+) : Serializable {
     init {
         require(transparency in TRANSPARENCY_RANGE) { "Transparency must be in $TRANSPARENCY_RANGE, not $transparency" }
         require(dayCount in DAY_COUNT_RANGE) { "The day count must be in $DAY_COUNT_RANGE, not $dayCount" }
