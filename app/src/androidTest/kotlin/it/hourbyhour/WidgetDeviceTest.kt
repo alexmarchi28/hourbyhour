@@ -49,6 +49,14 @@ class WidgetDeviceTest {
     }
 
     @Test
+    fun takesThePaletteOfThePhone() {
+        val (today, other) = onMain { headers().take(2) }
+
+        assertEquals(PaletteRole.PRIMARY.color(targetContext), onMain { today.currentTextColor })
+        assertEquals(PaletteRole.ON_SURFACE.color(targetContext), onMain { other.currentTextColor })
+    }
+
+    @Test
     fun drawsWithTheSettingsOfTheWidget() {
         store.save(widget.id, WidgetSettings(dayCount = 5))
         WidgetUpdater.update(targetContext, manager, intArrayOf(widget.id))

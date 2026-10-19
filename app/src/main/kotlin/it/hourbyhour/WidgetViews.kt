@@ -3,7 +3,6 @@ package it.hourbyhour
 import android.app.PendingIntent
 import android.content.Context
 import android.content.res.ColorStateList
-import android.content.res.Configuration
 import android.widget.RemoteViews
 
 /**
@@ -22,8 +21,8 @@ class WidgetViews(
     private val clicks: ((ClickTarget) -> PendingIntent)?,
 ) {
     private val packageName = context.packageName
-    private val lightBackground = themedColor(R.color.widget_background, night = false)
-    private val darkBackground = themedColor(R.color.widget_background, night = true)
+    private val lightBackground = context.inTheme(dark = false).getColor(R.color.widget_background)
+    private val darkBackground = context.inTheme(dark = true).getColor(R.color.widget_background)
 
     /** The message shown instead of the events when calendar access is missing. */
     fun message() = RemoteViews(packageName, R.layout.widget_message).apply { tintBackground() }
@@ -146,14 +145,6 @@ class WidgetViews(
         setFloat(inner, "setWeightSum", innerSum)
     }
 
-    /** A color resource as it is in the light or dark theme, whatever the current theme is. */
-    private fun themedColor(id: Int, night: Boolean): Int {
-        val configuration = Configuration(context.resources.configuration).apply {
-            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
-                if (night) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
-        }
-        return context.createConfigurationContext(configuration).getColor(id)
-    }
 }
 
 /**
