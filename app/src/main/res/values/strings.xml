@@ -79,4 +79,5 @@
     <string name="summary_no_calendars">no calendars</string>
     <string name="summary_no_birthdays">no birthdays</string>
     <string name="summary_transparency">%1$d%% transparent</string>
+    <string name="summary_system_colors">system colors</string>
 </resources>

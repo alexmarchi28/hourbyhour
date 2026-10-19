@@ -23,6 +23,11 @@ data class WidgetSettings(
     val customHours: Boolean = false,
     /** The hours chosen for the grid, kept while [customHours] is off. */
     val hours: HourRange = DEFAULT_HOURS,
+    /**
+     * Take the background, texts, grid and today's header from the system palette (Material You),
+     * which follows the wallpaper, instead of the Google Calendar colors. Events keep their colors.
+     */
+    val systemColors: Boolean = false,
 ) : Serializable {
     init {
         require(transparency in TRANSPARENCY_RANGE) { "Transparency must be in $TRANSPARENCY_RANGE, not $transparency" }

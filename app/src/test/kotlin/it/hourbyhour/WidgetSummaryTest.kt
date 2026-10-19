@@ -4,6 +4,7 @@ import it.hourbyhour.SettingSummary.Calendars
 import it.hourbyhour.SettingSummary.Days
 import it.hourbyhour.SettingSummary.Hours
 import it.hourbyhour.SettingSummary.NoBirthdays
+import it.hourbyhour.SettingSummary.SystemColors
 import it.hourbyhour.SettingSummary.Transparency
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -60,6 +61,11 @@ class WidgetSummaryTest {
     }
 
     @Test
+    fun systemColorsAreMentioned() {
+        assertEquals(listOf(Days(3, false), SystemColors), WidgetSettings(systemColors = true).summary(calendars))
+    }
+
+    @Test
     fun customHoursAreMentioned() {
         assertEquals(listOf(Days(3, false), Hours(7, 19)), WidgetSettings(customHours = true, hours = HourRange(7, 19)).summary(calendars))
         // The default hours too: they are chosen, no longer fitted to the events.
@@ -81,9 +87,13 @@ class WidgetSummaryTest {
             showBirthdays = false,
             customHours = true,
             hours = HourRange(6, 22),
+            systemColors = true,
         )
 
-        assertEquals(listOf(Days(5, true), Hours(6, 22), Calendars(1), NoBirthdays, Transparency(100)), settings.summary(calendars))
+        assertEquals(
+            listOf(Days(5, true), Hours(6, 22), Calendars(1), NoBirthdays, Transparency(100), SystemColors),
+            settings.summary(calendars),
+        )
     }
 
     @Test

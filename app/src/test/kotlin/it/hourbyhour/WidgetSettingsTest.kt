@@ -160,6 +160,12 @@ class WidgetSettingsTest {
     }
 
     @Test
+    fun widgetsKeepTheirOwnColorsByDefault() {
+        // The system colors are a choice: the widget looks as before unless it is turned on.
+        assertFalse(WidgetSettings().systemColors)
+    }
+
+    @Test
     fun checkingEveryCalendarMeansAllCalendars() {
         assertEquals(null, WidgetSettings.calendarSelection(setOf(2, 5, 6), listOf(2, 5, 6)))
         // Calendars that no longer exist do not count.

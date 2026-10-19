@@ -14,6 +14,9 @@ sealed interface SettingSummary {
     data object NoBirthdays : SettingSummary
 
     data class Transparency(val percent: Int) : SettingSummary
+
+    /** The colors of the system palette instead of the Google Calendar ones. */
+    data object SystemColors : SettingSummary
 }
 
 /**
@@ -27,6 +30,7 @@ fun WidgetSettings.summary(availableCalendars: Set<Long>?): List<SettingSummary>
     calendarIds?.let { ids -> add(SettingSummary.Calendars(availableCalendars?.let { ids.count(it::contains) } ?: ids.size)) }
     if (!showBirthdays) add(SettingSummary.NoBirthdays)
     if (transparency != WidgetSettings.DEFAULT_TRANSPARENCY) add(SettingSummary.Transparency(transparency))
+    if (systemColors) add(SettingSummary.SystemColors)
 }
 
 /** A widget on the home screen as the app lists it: "Widget [number]", then its [summary]. */

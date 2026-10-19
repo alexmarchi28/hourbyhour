@@ -107,6 +107,14 @@ class WidgetSettingsEditorTest {
     }
 
     @Test
+    fun systemColorsCanBeTurnedOnAndOff() {
+        val edited = editor.systemColorsChecked(true)
+
+        assertTrue(edited.settings.systemColors)
+        assertFalse(edited.systemColorsChecked(false).settings.systemColors)
+    }
+
+    @Test
     fun settingsBeingEditedSurviveSerialization() {
         // Kept in the saved state of the screen when Android recreates it (rotation, dark theme).
         val settings = WidgetSettings(
@@ -117,6 +125,7 @@ class WidgetSettingsEditorTest {
             showBirthdays = false,
             customHours = true,
             hours = HourRange(7, 19),
+            systemColors = true,
         )
         val bytes = ByteArrayOutputStream().also { ObjectOutputStream(it).use { out -> out.writeObject(settings) } }.toByteArray()
 

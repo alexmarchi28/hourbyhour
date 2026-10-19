@@ -64,5 +64,6 @@ fun describe(resources: Resources, summary: List<SettingSummary>): String = summ
         }
         SettingSummary.NoBirthdays -> resources.getString(R.string.summary_no_birthdays)
         is SettingSummary.Transparency -> resources.getString(R.string.summary_transparency, it.percent)
+        SettingSummary.SystemColors -> resources.getString(R.string.summary_system_colors)
     }
 }
