@@ -124,6 +124,26 @@ class WidgetSettingsActivityDeviceTest {
     }
 
     @Test
+    fun systemColorsAreOffUntilTurnedOnAndThenSaved() {
+        open().use { scenario ->
+            assertFalse(scenario.read { it.findViewById<Switch>(R.id.system_colors).isChecked })
+
+            scenario.onActivity { it.findViewById<View>(R.id.system_colors).performClick() }
+            scenario.leave { it.findViewById<View>(R.id.done).performClick() }
+
+            assertEquals(Activity.RESULT_OK, scenario.result.resultCode)
+        }
+        assertEquals(WidgetSettings(systemColors = true), store.load(widget.id))
+    }
+
+    @Test
+    fun showsTheSavedSystemColors() {
+        store.save(widget.id, WidgetSettings(systemColors = true))
+
+        open().use { scenario -> assertTrue(scenario.read { it.findViewById<Switch>(R.id.system_colors).isChecked }) }
+    }
+
+    @Test
     fun hoursFitTheEventsUntilCustomHoursAreTurnedOn() {
         open().use { scenario ->
             assertFalse(scenario.read { it.findViewById<Switch>(R.id.custom_hours).isChecked })

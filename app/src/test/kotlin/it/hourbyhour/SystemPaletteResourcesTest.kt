@@ -25,8 +25,15 @@ class SystemPaletteResourcesTest {
     private val night = colors("values-night")
     private val roles = day.filterKeys { it.startsWith("palette_") }
 
-    /** Colors that stay fixed on purpose: the current time is red as in Google Calendar, events keep their colors. */
-    private fun isFixed(name: String) = name == "widget_now" || name.startsWith("preview_") || name == "ic_launcher_background"
+    /**
+     * Colors that stay fixed on purpose: the default look of the widget is Google Calendar's (widget_*),
+     * the current time is red as in Google Calendar, events keep their colors.
+     */
+    private fun isFixed(name: String) =
+        (name.startsWith("widget_") && !isSystem(name)) || name.startsWith("preview_") || name == "ic_launcher_background"
+
+    /** The colors of a widget with system colors on (WidgetSettings.systemColors). */
+    private fun isSystem(name: String) = name.startsWith("widget_system_")
 
     @Test
     fun everyRoleIsAToneOfTheSystemPalette() {
@@ -43,14 +50,29 @@ class SystemPaletteResourcesTest {
     }
 
     @Test
-    fun theWidgetTakesItsColorsFromTheRoles() {
-        val widget = day.filterKeys { it.startsWith("widget_") && !isFixed(it) }
-        assertTrue("No widget colors", widget.isNotEmpty())
+    fun theWidgetWithSystemColorsTakesThemFromTheRoles() {
+        val widget = day.filterKeys(::isSystem)
+        assertTrue("No system colors for the widget", widget.isNotEmpty())
         for ((name, value) in widget) {
             assertTrue("$name is $value", value.removePrefix("@color/") in roles)
         }
         // They follow the theme through the roles: the night theme does not redefine them.
-        assertTrue(night.keys.none { it.startsWith("widget_") && !isFixed(it) })
+        assertTrue(night.keys.none(::isSystem))
+    }
+
+    @Test
+    fun theWidgetHasASystemColorForEachOfItsOwnColors() {
+        // WidgetViews sets one or the other for each part of the widget.
+        val own = day.keys.filter { it.startsWith("widget_") && !isSystem(it) && it != "widget_now" }
+        assertEquals(own.map { it.replace("widget_", "widget_system_") }.toSet(), day.keys.filter(::isSystem).toSet())
+    }
+
+    @Test
+    fun nothingElseOutsideTheRolesIsAFixedColor() {
+        for ((name, value) in day + night) {
+            if (name.startsWith("palette_") || isFixed(name)) continue
+            assertTrue("$name is $value", value.startsWith("@color/palette_"))
+        }
     }
 
     @Test

@@ -25,6 +25,8 @@
     <string name="calendars_label">Calendari</string>
     <string name="calendars_hint">Se hai appena creato un calendario e non lo vedi qui, apri Google Calendar e tocca Aggiorna nel menu: il telefono scarica i calendari nuovi solo di tanto in tanto.</string>
     <string name="birthdays">Compleanni</string>
+    <string name="system_colors">Colori di sistema</string>
+    <string name="system_colors_hint">Sfondo, testi e data di oggi seguono i colori di sfondo e stile del telefono. Gli eventi restano nei colori di Google Calendar.</string>
     <string name="no_calendars">Nessun calendario sincronizzato sul telefono.</string>
     <string name="done">Fatto</string>
 

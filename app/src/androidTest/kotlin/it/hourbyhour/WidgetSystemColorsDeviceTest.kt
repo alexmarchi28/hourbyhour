@@ -1,12 +1,12 @@
 package it.hourbyhour
 
 import android.content.Context
-import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.RemoteViews
 import android.widget.TextView
 import it.hourbyhour.PaletteRole.DIVIDER
@@ -18,8 +18,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * The widget takes the colors of the system palette (Material You), in the light and the dark
- * theme. The colors are references to the palette resolved where the views are inflated.
+ * With system colors on, the widget takes the colors of the system palette (Material You), in the
+ * light and the dark theme; by default it keeps the Google Calendar ones. The colors are resources
+ * resolved where the views are applied, as the launcher does.
  */
 class WidgetSystemColorsDeviceTest {
     private val tap = ClickTarget.Time(0)
@@ -37,50 +38,85 @@ class WidgetSystemColorsDeviceTest {
         }
     }
 
-    private fun opaque(color: Int) = color or 0xFF000000.toInt()
-
     private val View.fill get() = (background as ColorDrawable).color
 
-    @Test
-    fun theWidgetTakesThePaletteOfEachTheme() {
-        for ((theme, context) in bothThemes) {
-            val settings = WidgetSettings(transparency = 50)
-            val root = draw(WidgetViews(context, settings.backgroundAlpha, clicks = null).build(layout), context)
-            val (todayHeader, otherHeader) = root.childrenOf(R.id.headers).map { it as TextView }
-            val hourRow = root.childrenOf(R.id.hours).first() as ViewGroup
-            val more = root.descendants().single { it.id == R.id.banner_more } as TextView
-            val separator = (root.childrenOf(R.id.columns).first() as ViewGroup).getChildAt(0)
+    /** The colors a widget drawn with [settings] in [context] shows, by part. */
+    private fun colorsOf(settings: WidgetSettings, context: Context): Map<String, Int> {
+        val root = draw(WidgetViews(context, settings, clicks = null).build(layout), context)
+        val (todayHeader, otherHeader) = root.childrenOf(R.id.headers).map { it as TextView }
+        val hourRow = root.childrenOf(R.id.hours).first() as ViewGroup
+        val more = root.descendants().single { it.id == R.id.banner_more } as TextView
+        val separator = (root.childrenOf(R.id.columns).first() as ViewGroup).getChildAt(0)
+        return mapOf(
+            "Background" to root.findViewById<ImageView>(android.R.id.background).imageTintList!!.defaultColor,
+            "Today" to todayHeader.currentTextColor,
+            "Other days" to otherHeader.currentTextColor,
+            "Hour labels" to (hourRow.getChildAt(0) as TextView).currentTextColor,
+            "+N" to more.currentTextColor,
+            "Hour lines" to hourRow.getChildAt(1).fill,
+            "Grid bottom" to root.findViewById<View>(R.id.grid_bottom).fill,
+            "Day separators" to separator.fill,
+        )
+    }
 
-            val background = root.backgroundTintList!!.defaultColor
-            assertEquals("Background, $theme", SURFACE_CONTAINER.color(context), opaque(background))
-            assertEquals("Transparency is kept, $theme", settings.backgroundAlpha, Color.alpha(background))
-            assertEquals("Today, $theme", PRIMARY.color(context), todayHeader.currentTextColor)
-            assertEquals("Other days, $theme", ON_SURFACE.color(context), otherHeader.currentTextColor)
-            assertEquals("Hour labels, $theme", ON_SURFACE_VARIANT.color(context), (hourRow.getChildAt(0) as TextView).currentTextColor)
-            assertEquals("+N, $theme", ON_SURFACE_VARIANT.color(context), more.currentTextColor)
-            assertEquals("Hour lines, $theme", DIVIDER.color(context), hourRow.getChildAt(1).fill)
-            assertEquals("Day separators, $theme", DIVIDER.color(context), separator.fill)
+    @Test
+    fun withSystemColorsTheWidgetTakesThePaletteOfEachTheme() {
+        for ((theme, context) in bothThemes) {
+            val expected = mapOf(
+                "Background" to SURFACE_CONTAINER,
+                "Today" to PRIMARY,
+                "Other days" to ON_SURFACE,
+                "Hour labels" to ON_SURFACE_VARIANT,
+                "+N" to ON_SURFACE_VARIANT,
+                "Hour lines" to DIVIDER,
+                "Grid bottom" to DIVIDER,
+                "Day separators" to DIVIDER,
+            ).mapValues { it.value.color(context) }
+
+            assertEquals(theme, expected, colorsOf(WidgetSettings(systemColors = true), context))
         }
     }
 
     @Test
-    fun theMessageTakesThePaletteOfEachTheme() {
+    fun byDefaultTheWidgetKeepsTheGoogleCalendarColors() {
         for ((theme, context) in bothThemes) {
-            val root = draw(WidgetViews(context, 255, clicks = null).message(), context) as TextView
+            val expected = mapOf(
+                "Background" to R.color.widget_background,
+                "Today" to R.color.widget_today,
+                "Other days" to R.color.widget_text,
+                "Hour labels" to R.color.widget_text_secondary,
+                "+N" to R.color.widget_text_secondary,
+                "Hour lines" to R.color.widget_grid,
+                "Grid bottom" to R.color.widget_grid,
+                "Day separators" to R.color.widget_grid,
+            ).mapValues { context.getColor(it.value) }
 
-            assertEquals("Background, $theme", SURFACE_CONTAINER.color(context), root.backgroundTintList!!.defaultColor)
-            assertEquals("Text, $theme", ON_SURFACE.color(context), root.currentTextColor)
+            assertEquals(theme, expected, colorsOf(WidgetSettings(), context))
         }
     }
 
     @Test
-    fun thePickerPreviewTakesThePaletteOfEachTheme() {
+    fun theMessageTakesThePaletteOfTheWidget() {
+        for ((theme, context) in bothThemes) {
+            val system = draw(WidgetViews(context, WidgetSettings(systemColors = true), clicks = null).message(), context)
+            val google = draw(WidgetViews(context, WidgetSettings(), clicks = null).message(), context)
+
+            assertEquals("Background, $theme", SURFACE_CONTAINER.color(context), system.findViewById<ImageView>(android.R.id.background).imageTintList!!.defaultColor)
+            assertEquals("Text, $theme", ON_SURFACE.color(context), system.findViewById<TextView>(R.id.message).currentTextColor)
+            assertEquals("Default background, $theme", context.getColor(R.color.widget_background), google.findViewById<ImageView>(android.R.id.background).imageTintList!!.defaultColor)
+            assertEquals("Default text, $theme", context.getColor(R.color.widget_text), google.findViewById<TextView>(R.id.message).currentTextColor)
+        }
+    }
+
+    @Test
+    fun thePickerPreviewShowsTheDefaultColors() {
+        // The picker shows a widget with the default settings, so in the Google Calendar colors.
         for ((theme, context) in bothThemes) {
             val root = draw(RemoteViews(targetContext.packageName, R.layout.widget_preview), context)
             val headers = root.childrenOf(R.id.preview_headers).map { it as TextView }
 
-            assertEquals("Today, $theme", PRIMARY.color(context), headers.first().currentTextColor)
-            assertEquals("Other days, $theme", ON_SURFACE.color(context), headers.last().currentTextColor)
+            assertEquals("Today, $theme", context.getColor(R.color.widget_today), headers.first().currentTextColor)
+            assertEquals("Other days, $theme", context.getColor(R.color.widget_text), headers.last().currentTextColor)
         }
     }
 }

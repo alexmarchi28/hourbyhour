@@ -49,11 +49,20 @@ class WidgetDeviceTest {
     }
 
     @Test
-    fun takesThePaletteOfThePhone() {
+    fun keepsTheGoogleCalendarColorsByDefault() {
         val (today, other) = onMain { headers().take(2) }
 
-        assertEquals(PaletteRole.PRIMARY.color(targetContext), onMain { today.currentTextColor })
-        assertEquals(PaletteRole.ON_SURFACE.color(targetContext), onMain { other.currentTextColor })
+        assertEquals(targetContext.getColor(R.color.widget_today), onMain { today.currentTextColor })
+        assertEquals(targetContext.getColor(R.color.widget_text), onMain { other.currentTextColor })
+    }
+
+    @Test
+    fun takesThePaletteOfThePhoneWithSystemColors() {
+        store.save(widget.id, WidgetSettings(systemColors = true))
+        WidgetUpdater.update(targetContext, manager, intArrayOf(widget.id))
+
+        waitFor("the system palette") { headers().first().currentTextColor == PaletteRole.PRIMARY.color(targetContext) }
+        assertEquals(PaletteRole.ON_SURFACE.color(targetContext), onMain { headers()[1].currentTextColor })
     }
 
     @Test

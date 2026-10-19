@@ -17,7 +17,7 @@ object WidgetUpdater {
      * intents made by [clicks]; previews pass null, since a tap would open the calendar app and leave them.
      */
     fun views(context: Context, content: WidgetContent, clicks: ((ClickTarget) -> PendingIntent)?): RemoteViews {
-        val views = WidgetViews(context, content.settings.backgroundAlpha, clicks)
+        val views = WidgetViews(context, content.settings, clicks)
         val layout = content.layout ?: return views.message()
         return views.build(layout)
     }
