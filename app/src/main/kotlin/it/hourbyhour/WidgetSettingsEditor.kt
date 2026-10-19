@@ -39,6 +39,8 @@ data class WidgetSettingsEditor(val settings: WidgetSettings) {
 
     fun birthdaysChecked(checked: Boolean) = edit { copy(showBirthdays = checked) }
 
+    fun systemColorsChecked(checked: Boolean) = edit { copy(systemColors = checked) }
+
     private fun edit(change: WidgetSettings.() -> WidgetSettings) = WidgetSettingsEditor(settings.change())
 
     companion object {

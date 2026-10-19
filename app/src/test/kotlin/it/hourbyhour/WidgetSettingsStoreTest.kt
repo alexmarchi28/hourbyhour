@@ -17,6 +17,7 @@ class WidgetSettingsStoreTest {
         showBirthdays = false,
         customHours = true,
         hours = HourRange(7, 19),
+        systemColors = true,
     )
 
     @Test
@@ -44,7 +45,7 @@ class WidgetSettingsStoreTest {
         store.save(7, custom)
 
         assertEquals(
-            setOf("transparency_7", "days_7", "from_monday_7", "calendars_7", "birthdays_7", "custom_hours_7", "hours_from_7", "hours_to_7"),
+            setOf("transparency_7", "days_7", "from_monday_7", "calendars_7", "birthdays_7", "custom_hours_7", "hours_from_7", "hours_to_7", "system_colors_7"),
             preferences.all.keys,
         )
         assertEquals(7, preferences.getInt("hours_from_7", 0))
@@ -77,7 +78,7 @@ class WidgetSettingsStoreTest {
         store.delete(intArrayOf(7, 9))
 
         assertEquals(
-            setOf("transparency_8", "days_8", "from_monday_8", "calendars_8", "birthdays_8", "custom_hours_8", "hours_from_8", "hours_to_8"),
+            setOf("transparency_8", "days_8", "from_monday_8", "calendars_8", "birthdays_8", "custom_hours_8", "hours_from_8", "hours_to_8", "system_colors_8"),
             preferences.all.keys,
         )
     }
@@ -97,6 +98,13 @@ class WidgetSettingsStoreTest {
         preferences.edit().putInt("days_7", 5).putStringSet("calendars_7", setOf("3")).apply()
 
         assertEquals(WidgetSettings(dayCount = 5, calendarIds = setOf(3L), showBirthdays = true), store.load(7))
+    }
+
+    @Test
+    fun widgetsSavedBeforeSystemColorsCouldBeChosenKeepTheirColors() {
+        preferences.edit().putInt("days_7", 5).apply()
+
+        assertEquals(WidgetSettings(dayCount = 5, systemColors = false), store.load(7))
     }
 
     @Test

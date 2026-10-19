@@ -22,6 +22,8 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) : Settings
         // Widgets saved before hours could be chosen fit them to the events.
         customHours = preferences.getBoolean(customHoursKey(widgetId), false),
         hours = loadHours(widgetId),
+        // Widgets saved before system colors could be chosen keep their colors.
+        systemColors = preferences.getBoolean(systemColorsKey(widgetId), false),
     )
 
     /** The saved hours brought back within a day, with the end after the start as when choosing them. */
@@ -41,6 +43,7 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) : Settings
             .putBoolean(customHoursKey(widgetId), settings.customHours)
             .putInt(hoursFromKey(widgetId), settings.hours.start)
             .putInt(hoursToKey(widgetId), settings.hours.end)
+            .putBoolean(systemColorsKey(widgetId), settings.systemColors)
         val calendarIds = settings.calendarIds
         if (calendarIds == null) {
             editor.remove(calendarsKey(widgetId))
@@ -71,6 +74,7 @@ class WidgetSettingsStore(private val preferences: SharedPreferences) : Settings
     private fun customHoursKey(widgetId: Int) = "custom_hours_$widgetId"
     private fun hoursFromKey(widgetId: Int) = "hours_from_$widgetId"
     private fun hoursToKey(widgetId: Int) = "hours_to_$widgetId"
+    private fun systemColorsKey(widgetId: Int) = "system_colors_$widgetId"
 
     companion object {
         const val FILE_NAME = "widget_settings"
