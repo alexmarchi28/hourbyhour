@@ -3,14 +3,28 @@
     <color name="ic_launcher_background">#1A73E8</color>
 
     <!--
-        Widget, light theme. The night variants are in values-night. The background is opaque here:
-        WidgetViews applies the transparency chosen for each widget.
+        Roles of the system palette (Material You), light theme; the dark tones are in values-night.
+        They are the only place that says which tone each role takes: the widget and the screens use
+        the roles, so they follow the colors of the phone. In the widget the launcher resolves them
+        when it inflates the views.
     -->
-    <color name="widget_background">#FFFFFF</color>
-    <color name="widget_text">#1F1F1F</color>
-    <color name="widget_text_secondary">#5F6368</color>
-    <color name="widget_grid">#E3E3E3</color>
-    <color name="widget_today">#1A73E8</color>
+    <color name="palette_surface">@android:color/system_neutral1_10</color>
+    <color name="palette_surface_container">@android:color/system_neutral1_50</color>
+    <color name="palette_on_surface">@android:color/system_neutral1_900</color>
+    <color name="palette_on_surface_variant">@android:color/system_neutral2_700</color>
+    <color name="palette_divider">@android:color/system_neutral2_100</color>
+    <color name="palette_primary">@android:color/system_accent1_600</color>
+    <color name="palette_primary_container">@android:color/system_accent1_100</color>
+
+    <!--
+        Widget. The background is opaque here: WidgetViews applies the transparency chosen for each
+        widget. The current time stays red, as in Google Calendar (night variant in values-night).
+    -->
+    <color name="widget_background">@color/palette_surface_container</color>
+    <color name="widget_text">@color/palette_on_surface</color>
+    <color name="widget_text_secondary">@color/palette_on_surface_variant</color>
+    <color name="widget_grid">@color/palette_divider</color>
+    <color name="widget_today">@color/palette_primary</color>
     <color name="widget_now">#D93025</color>
 
     <!--

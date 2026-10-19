@@ -63,6 +63,7 @@ WidgetList.kt         elenco dei widget sulla Home in MainActivity: toccandone u
 WidgetPreview.kt      anteprima del widget nelle schermate dell'app (stesse RemoteViews del launcher, senza click)
 WidgetPickerPreview.kt  anteprima nel selettore dei widget del launcher, con gli eventi inventati
 CalendarIntents.kt    intent che aprono l'app calendario su un evento o un giorno
+ThemedContext.kt      inTheme: un contesto nel tema chiaro o scuro, qualunque sia quello del telefono
 ```
 
 `CalendarEvent.kt`, `Agenda.kt`, `Timeline.kt`, `GoogleColors.kt`, `WidgetLayout.kt`, `EventColors.kt`, `WidgetSettings.kt`, `SampleAgenda.kt`, `WidgetSummary.kt`, `WidgetRefresh.kt` e `WidgetSettingsEditor.kt` non dipendono da Android: la logica nuova va lì, con i suoi test. Il flusso è `EventSource` (`PhoneCalendar` → `CalendarSource`) → `Agenda` (una lettura per tutti i widget) → `Agenda.snapshot(settings)` (i giorni e la fascia oraria di ogni widget) → `layoutWidget` → `WidgetContent` (`WidgetRefresh`) → `WidgetViews`. Ogni decisione su cosa mostrare e dove (posizioni, righe dei banner, etichette, intestazioni, evento passato, linea dell'ora) sta in `layoutWidget`: `WidgetViews` traduce e basta, così il comportamento resta coperto dai test.
@@ -136,6 +137,16 @@ I test usano colori campionati da screenshot di Google Calendar sul telefono. Se
 
 Nel widget ogni colore di evento si imposta per **entrambi i temi** (`setColorStateList`/`setColorInt` con le varianti chiaro e scuro): il launcher sceglie quella giusta e il cambio di tema è immediato.
 
+## Colori di sistema (Material You)
+
+Il widget e le schermate dell'app prendono i colori dalla **palette di sistema** del telefono (quella che Android ricava dallo sfondo o dal colore scelto in "Sfondo e stile"), con i ruoli di Material 3:
+
+- I ruoli (`palette_*` in `values/colors.xml`, toni scuri in `values-night/colors.xml`) sono **l'unico posto** che dice quale tono della palette (`@android:color/system_accent1_600`, `system_neutral1_900`…) prende ogni ruolo. Il widget (`widget_*`) e il tema delle schermate (`Theme.HourByHour` in `themes.xml`) usano solo i ruoli; `values-night` ridefinisce solo i ruoli. `SystemPaletteResourcesTest` (JVM, quindi anche nella CI) lo controlla; `PaletteRole` (test sul telefono) ripete i toni attesi.
+- Restano fissi apposta: la linea dell'ora (rossa, come in Google Calendar), i colori degli eventi (quelli di Google Calendar, vedi "Colori degli eventi"), i colori degli eventi di `widget_preview.xml` (`preview_*`) e l'icona.
+- Nel widget i riferimenti alla palette li risolve **il launcher**, quando gonfia le viste: le parti statiche seguono la palette senza che l'app ridisegni. Quelli letti in codice (lo sfondo con la trasparenza di ogni widget, gli eventi passati sfumati verso lo sfondo) si fissano al ridisegno del widget.
+- Le schermate usano `Theme.HourByHour` (da `Theme.DeviceDefault.DayNight`): sul Motorola `DeviceDefault` non segue la palette (barre grigie e il verde Motorola). I pulsanti usano `primary_container` e non `secondary_container`: con le palette "espressive" il secondario ha un'altra tonalità e stona con i controlli. I testi del tema sono selettori in `res/color`, che li sbiadiscono quando sono disattivati.
+- `StoreGraphics` disegna il widget con la palette del telefono in quel momento: rigenerando le immagini dello store, lo sfondo e il giorno di oggi prendono quei colori.
+
 ## Come è disegnato il widget
 
 **Non usare bitmap né dimensioni assolute.** I launcher possono dichiarare una dimensione diversa da quella reale: il launcher Motorola dichiara circa 3/4 dell'altezza vera, quindi una bitmap viene stirata. Il widget è fatto di layout posizionati con i **pesi**:
@@ -145,7 +156,7 @@ Nel widget ogni colore di evento si imposta per **entrambi i temi** (`setColorSt
 - Le misure usate per le stime stanno in `LayoutEstimates` (`WidgetLayout.kt`). Quelle esatte (padding, margini, testi) sono anche in `dimens.xml`, usate dai layout: `LayoutEstimatesDeviceTest` controlla che coincidano, e che le stime (altezza di intestazioni, righe "tutto il giorno", riga di titolo) non siano più piccole delle viste disegnate. Cambiando un layout, aggiorna le due cose insieme.
 - Nei layout dei widget si possono usare solo le classi ammesse da `RemoteViews`: **niente `View` né `Space`**, per spaziatori e linee usa `FrameLayout`.
 - Il launcher può riapplicare le nuove `RemoteViews` sopra quelle vecchie invece di ricrearle: i contenitori riempiti a runtime vanno svuotati con `removeAllViews` e devono contenere **solo** view aggiunte a runtime.
-- Colori statici in `values/colors.xml` e `values-night/colors.xml`: il widget segue subito il tema di sistema. In codice si impostano solo i colori degli eventi, con una variante per tema (vedi "Colori degli eventi").
+- Colori statici in `values/colors.xml` e `values-night/colors.xml`, presi dalla palette di sistema (vedi "Colori di sistema"): il widget segue subito il tema di sistema. In codice si impostano solo lo sfondo (per la trasparenza) e i colori degli eventi, con una variante per tema (vedi "Colori degli eventi").
 
 Aggiornamenti: alla aggiunta e al ridimensionamento del widget, quando cambia il calendario (job con trigger sul content URI, che si riprogramma dopo ogni esecuzione), e ogni quarto d'ora con un allarme `RTC` che non sveglia il telefono (sposta la linea dell'ora e cambia giorno a mezzanotte). `updatePeriodMillis` (30 min) è solo una rete di sicurezza. Disegnare (`WidgetUpdater`) e programmare (`RefreshScheduler`) sono separati: dopo ogni ridisegno il provider, e il job alla fine della sua esecuzione, chiamano `RefreshScheduler.afterRedraw`; con l'ultimo widget tolto, `cancel`. Un widget che fallisce tiene il contenuto di prima e non ferma gli altri (`drawEach`). Le schermate chiedono il ridisegno al provider (`HourByHourWidget.redraw`), che lavora con `goAsync`: un thread avviato da un'attività che si chiude può morire con il processo.
 
@@ -171,6 +182,7 @@ Per confrontare un colore con Google Calendar, fai uno screenshot di entrambi (s
   - `CalendarIntentsDeviceTest` (Google Calendar accetta gli intent dei tocchi) e `MainActivityDeviceTest`, che trova nell'elenco dei widget il `TestWidget` (stesso provider dei widget veri, ospitato dal test) e ne apre le impostazioni.
   - `LayoutEstimatesDeviceTest`: le misure di `LayoutEstimates` contro `dimens.xml` e contro le viste disegnate.
   - `WidgetPickerPreviewDeviceTest`: `widget_preview.xml` gonfiato come `RemoteViews` (posizioni, titoli, colori nei due temi) e l'anteprima generata (eventi inventati, nessun click, pubblicata).
+  - `WidgetSystemColorsDeviceTest` e `ThemeSystemColorsDeviceTest`: widget, messaggio, anteprima del selettore e temi delle schermate con i toni della palette attesi (`PaletteRole`), nei due temi. `WidgetDeviceTest` controlla anche il widget vero.
 - `gradle.properties` contiene `android.injected.androidTest.leaveApksInstalledAfterRun=true`: senza, AGP disinstalla l'app dopo i test sul telefono, e i widget spariscono dalla Home. Non toglierlo.
 - Restano da provare a mano: il launcher vero (dimensioni riportate, viste riapplicate), l'aspetto (colori confrontati con Google Calendar, tema chiaro), i tempi della sveglia e del job sul calendario.
 
@@ -209,4 +221,4 @@ Rigenerale quando cambia l'aspetto del widget, e guardale prima di committarle.
 
 ## Fuori scope per ora (non implementare senza richiesta esplicita)
 
-Altre azioni al tocco (ad esempio creare un evento), Material You e colori dinamici, altre impostazioni del widget (ad esempio una fascia oraria fissa che nasconde gli eventi fuori), ombre o colore del testo adattati allo sfondo, login Google e Calendar API.
+Altre azioni al tocco (ad esempio creare un evento), altre impostazioni del widget (ad esempio una fascia oraria fissa che nasconde gli eventi fuori), ombre o colore del testo adattati allo sfondo, login Google e Calendar API.
