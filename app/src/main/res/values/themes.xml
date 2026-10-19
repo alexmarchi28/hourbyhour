@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        The screens of the app take the system palette (Material You) like the widget: the colors are
-        in colors.xml, with their night variants in values-night.
+        The screens of the app take the roles of the system palette (Material You) like the widget,
+        see colors.xml. The text colors are the selectors in res/color, which fade them when disabled.
     -->
     <style name="Theme.HourByHour" parent="@android:style/Theme.DeviceDefault.DayNight">
-        <item name="android:colorBackground">@color/app_background</item>
-        <item name="android:windowBackground">@color/app_background</item>
-        <item name="android:colorPrimary">@color/app_background</item>
-        <item name="android:colorPrimaryDark">@color/app_background</item>
-        <item name="android:statusBarColor">@color/app_background</item>
-        <item name="android:navigationBarColor">@color/app_background</item>
+        <item name="android:colorBackground">@color/palette_surface</item>
+        <item name="android:windowBackground">@color/palette_surface</item>
+        <item name="android:colorPrimary">@color/palette_surface</item>
+        <item name="android:colorPrimaryDark">@color/palette_surface</item>
+        <item name="android:statusBarColor">@color/palette_surface</item>
+        <item name="android:navigationBarColor">@color/palette_surface</item>
         <item name="android:textColorPrimary">@color/app_text_primary</item>
         <item name="android:textColorSecondary">@color/app_text_secondary</item>
-        <item name="android:colorAccent">@color/app_accent</item>
-        <item name="android:colorButtonNormal">@color/app_button</item>
+        <item name="android:colorAccent">@color/palette_primary</item>
+        <item name="android:colorButtonNormal">@color/palette_primary_container</item>
     </style>
 
     <!-- Shows the home screen wallpaper behind the window, so the preview looks like the real widget. -->

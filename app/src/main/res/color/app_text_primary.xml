@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Disabled text fades as in the platform themes. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:alpha="?android:attr/disabledAlpha" android:color="@color/app_text" android:state_enabled="false" />
-    <item android:color="@color/app_text" />
+    <item android:alpha="?android:attr/disabledAlpha" android:color="@color/palette_on_surface" android:state_enabled="false" />
+    <item android:color="@color/palette_on_surface" />
 </selector>

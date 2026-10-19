@@ -3,27 +3,29 @@
     <color name="ic_launcher_background">#1A73E8</color>
 
     <!--
-        Widget, light theme. The night variants are in values-night. The colors are references to the
-        system palette (Material You): the launcher resolves them when it inflates the widget, so they
-        follow the colors of the phone. The background is opaque here: WidgetViews applies the
-        transparency chosen for each widget. The current time stays red, as in Google Calendar.
+        Roles of the system palette (Material You), light theme; the dark tones are in values-night.
+        They are the only place that says which tone each role takes: the widget and the screens use
+        the roles, so they follow the colors of the phone. In the widget the launcher resolves them
+        when it inflates the views.
     -->
-    <color name="widget_background">@android:color/system_neutral1_50</color>
-    <color name="widget_text">@android:color/system_neutral1_900</color>
-    <color name="widget_text_secondary">@android:color/system_neutral2_700</color>
-    <color name="widget_grid">@android:color/system_neutral2_100</color>
-    <color name="widget_today">@android:color/system_accent1_600</color>
-    <color name="widget_now">#D93025</color>
+    <color name="palette_surface">@android:color/system_neutral1_10</color>
+    <color name="palette_surface_container">@android:color/system_neutral1_50</color>
+    <color name="palette_on_surface">@android:color/system_neutral1_900</color>
+    <color name="palette_on_surface_variant">@android:color/system_neutral2_700</color>
+    <color name="palette_divider">@android:color/system_neutral2_100</color>
+    <color name="palette_primary">@android:color/system_accent1_600</color>
+    <color name="palette_primary_container">@android:color/system_accent1_100</color>
 
     <!--
-        Screens of the app (themes.xml), light theme: the system palette, like the widget. The text
-        colors used by the theme are the selectors in res/color, which fade them when disabled.
+        Widget. The background is opaque here: WidgetViews applies the transparency chosen for each
+        widget. The current time stays red, as in Google Calendar (night variant in values-night).
     -->
-    <color name="app_background">@android:color/system_neutral1_10</color>
-    <color name="app_text">@android:color/system_neutral1_900</color>
-    <color name="app_text_muted">@android:color/system_neutral2_700</color>
-    <color name="app_accent">@android:color/system_accent1_600</color>
-    <color name="app_button">@android:color/system_accent1_100</color>
+    <color name="widget_background">@color/palette_surface_container</color>
+    <color name="widget_text">@color/palette_on_surface</color>
+    <color name="widget_text_secondary">@color/palette_on_surface_variant</color>
+    <color name="widget_grid">@color/palette_divider</color>
+    <color name="widget_today">@color/palette_primary</color>
+    <color name="widget_now">#D93025</color>
 
     <!--
         Events of the widget picker preview (widget_preview.xml): the colors that eventColors() gives
