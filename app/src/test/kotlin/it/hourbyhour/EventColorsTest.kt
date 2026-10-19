@@ -4,15 +4,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class EventColorsTest {
-    private val lightBackground = 0xFFFFFFFF.toInt()
-    private val darkBackground = 0xFF202124.toInt()
     private val graphiteEvent = 0xFFE1E1E1.toInt()
     private val bananaEvent = 0xFFFBD75B.toInt()
 
     private fun hex(color: Int) = "#%08X".format(color)
 
-    private fun colors(providerColor: Int, past: Boolean) =
-        eventColors(providerColor, past, lightBackground, darkBackground)
+    private fun colors(providerColor: Int, past: Boolean) = eventColors(providerColor, past)
 
     @Test
     fun upcomingEventsUseGoogleCalendarColors() {
@@ -23,11 +20,29 @@ class EventColorsTest {
     }
 
     @Test
-    fun pastEventsAreFadedTowardsEachThemeBackground() {
+    fun pastEventsAreHalfTransparent() {
+        // The widget background shows through, whatever its color: nothing depends on the palette.
         val colors = colors(graphiteEvent, past = true)
 
-        assertEquals("#FFBEBEBE", hex(colors.lightFill))
-        assertEquals("#FF505052", hex(colors.darkFill))
+        assertEquals("#807E7E7E", hex(colors.lightFill))
+        assertEquals("#80808080", hex(colors.darkFill))
+    }
+
+    @Test
+    fun onAnOpaqueBackgroundPastEventsLookFadedTowardsIt() {
+        // As before the fill was made transparent: half the event color, half the background.
+        val fill = colors(graphiteEvent, past = true).lightFill
+
+        assertEquals("#FFBEBEBE", hex(blend(fill or 0xFF000000.toInt(), 0xFFFFFFFF.toInt(), 1 - (fill ushr 24) / 255f)))
+    }
+
+    @Test
+    fun theTextOfPastEventsSuitsTheirFadedLook() {
+        // Faded towards a light background, graphite is light enough for dark text; on a dark one it stays white.
+        val colors = colors(graphiteEvent, past = true)
+
+        assertEquals("#FF202124", hex(colors.lightText))
+        assertEquals("#FFFFFFFF", hex(colors.darkText))
     }
 
     @Test

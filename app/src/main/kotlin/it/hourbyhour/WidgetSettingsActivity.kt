@@ -58,6 +58,10 @@ class WidgetSettingsActivity : Activity() {
             progress = editor.transparencyProgress
             onProgress { edit { transparencyMoved(it) } }
         }
+        findViewById<Switch>(R.id.system_colors).apply {
+            isChecked = editor.settings.systemColors
+            setOnCheckedChangeListener { _, checked -> edit { systemColorsChecked(checked) } }
+        }
         findViewById<SeekBar>(R.id.day_count).apply {
             max = WidgetSettingsEditor.DAY_COUNT_MAX
             progress = editor.dayCountProgress

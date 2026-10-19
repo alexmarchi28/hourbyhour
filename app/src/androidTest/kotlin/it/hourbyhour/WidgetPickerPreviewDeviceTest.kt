@@ -74,9 +74,8 @@ class WidgetPickerPreviewDeviceTest {
         for (dark in listOf(false, true)) {
             val context = themedContext(dark)
             val root = show(RemoteViews(targetContext.packageName, R.layout.widget_preview), context)
-            val background = context.getColor(R.color.widget_background)
             for ((title, color) in listOf(R.string.sample_dentist to SampleAgenda.FLAMINGO, R.string.sample_design_workshop to SampleAgenda.PEACOCK)) {
-                val expected = eventColors(color, past = false, background, background)
+                val expected = eventColors(color, past = false)
                 val box = onMain { root.descendants().filterIsInstance<TextView>().single { it.text == string(title) } }
                 assertEquals("Fill of ${string(title)}, dark $dark", if (dark) expected.darkFill else expected.lightFill, box.backgroundTintList!!.defaultColor)
                 assertEquals("Text of ${string(title)}, dark $dark", if (dark) expected.darkText else expected.lightText, box.currentTextColor)

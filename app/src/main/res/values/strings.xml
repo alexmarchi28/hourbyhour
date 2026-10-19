@@ -30,6 +30,8 @@
     <string name="calendars_label">Calendars</string>
     <string name="calendars_hint">If you just created a calendar and it is not here, open Google Calendar and tap Refresh in its menu: the phone downloads new calendars only now and then.</string>
     <string name="birthdays">Birthdays</string>
+    <string name="system_colors">System colors</string>
+    <string name="system_colors_hint">Background, text and today\'s date follow the colors of your wallpaper and style. Events keep their Google Calendar colors.</string>
     <string name="no_calendars">No calendars synced to the phone.</string>
     <string name="done">Done</string>
 

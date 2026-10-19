@@ -17,14 +17,25 @@
     <color name="palette_primary_container">@android:color/system_accent1_100</color>
 
     <!--
-        Widget. The background is opaque here: WidgetViews applies the transparency chosen for each
-        widget. The current time stays red, as in Google Calendar (night variant in values-night).
+        Widget, light theme: the Google Calendar look, the default. The night variants are in
+        values-night. The backgrounds are opaque here: WidgetViews applies the transparency chosen
+        for each widget. The current time stays red, as in Google Calendar.
     -->
-    <color name="widget_background">@color/palette_surface_container</color>
-    <color name="widget_text">@color/palette_on_surface</color>
-    <color name="widget_text_secondary">@color/palette_on_surface_variant</color>
-    <color name="widget_grid">@color/palette_divider</color>
-    <color name="widget_today">@color/palette_primary</color>
+    <color name="widget_background">#FFFFFF</color>
+    <color name="widget_text">#1F1F1F</color>
+    <color name="widget_text_secondary">#5F6368</color>
+    <color name="widget_grid">#E3E3E3</color>
+    <color name="widget_today">#1A73E8</color>
+
+    <!--
+        Widget with system colors (WidgetSettings.systemColors): the palette roles, which follow the
+        theme by themselves, so values-night does not redefine them.
+    -->
+    <color name="widget_system_background">@color/palette_surface_container</color>
+    <color name="widget_system_text">@color/palette_on_surface</color>
+    <color name="widget_system_text_secondary">@color/palette_on_surface_variant</color>
+    <color name="widget_system_grid">@color/palette_divider</color>
+    <color name="widget_system_today">@color/palette_primary</color>
     <color name="widget_now">#D93025</color>
 
     <!--

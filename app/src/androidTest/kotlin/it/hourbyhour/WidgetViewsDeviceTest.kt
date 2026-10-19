@@ -10,6 +10,7 @@ import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.TextView
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -25,8 +26,16 @@ class WidgetViewsDeviceTest {
     private fun event(title: String, id: Long, allDay: Boolean = false) =
         CalendarEvent(title, begin = id * 1_000, end = id * 1_000 + 500, allDay, color = 0xFF039BE5.toInt(), eventId = id)
 
-    private fun box(event: CalendarEvent, top: Float, bottom: Float, left: Float = 0f, right: Float = 1f, title: TitleSize, maxLines: Int = 1) =
-        EventBox(event, top, bottom, left, right, title, maxLines, past = false)
+    private fun box(
+        event: CalendarEvent,
+        top: Float,
+        bottom: Float,
+        left: Float = 0f,
+        right: Float = 1f,
+        title: TitleSize,
+        maxLines: Int = 1,
+        past: Boolean = false,
+    ) = EventBox(event, top, bottom, left, right, title, maxLines, past)
 
     private val monday = ClickTarget.Time(1_000_000)
     private val tuesday = ClickTarget.Time(2_000_000)
@@ -43,7 +52,7 @@ class WidgetViewsDeviceTest {
             DayColumn(
                 listOf(
                     box(meeting, 0.25f, 0.5f, title = TitleSize.NORMAL, maxLines = 3),
-                    box(call, 0.5f, 0.55f, left = 0.5f, title = TitleSize.COMPACT),
+                    box(call, 0.5f, 0.55f, left = 0.5f, title = TitleSize.COMPACT, past = true),
                     box(reminder, 0.9f, 0.91f, title = TitleSize.NONE),
                 ),
                 nowLine = 0.6f,
@@ -85,7 +94,7 @@ class WidgetViewsDeviceTest {
         width: Int = 600,
         height: Int = 900,
     ): View = onMain {
-        val root = WidgetViews(targetContext, settings.backgroundAlpha, clicks).build(layout).apply(targetContext, FrameLayout(targetContext))
+        val root = WidgetViews(targetContext, settings, clicks).build(layout).apply(targetContext, FrameLayout(targetContext))
         root.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY))
         root.layout(0, 0, width, height)
         root
@@ -175,9 +184,19 @@ class WidgetViewsDeviceTest {
 
     @Test
     fun backgroundTakesTheTransparencyOfTheWidget() {
-        val root = draw(WidgetSettings(transparency = 50))
+        val background = draw(WidgetSettings(transparency = 50)).findViewById<ImageView>(android.R.id.background)
 
-        assertEquals(WidgetSettings(transparency = 50).backgroundAlpha, Color.alpha(root.backgroundTintList!!.defaultColor))
+        assertEquals(WidgetSettings(transparency = 50).backgroundAlpha, onMain { background.imageAlpha })
+        // The color stays opaque: only the layer is transparent, so the launcher can resolve the color.
+        assertEquals(255, Color.alpha(background.imageTintList!!.defaultColor))
+    }
+
+    @Test
+    fun pastEventsAreHalfTransparentAndUpcomingOnesOpaque() {
+        val (meetingBox, callBox) = eventsOf(draw().columns()[0]).take(2).map { it.eventBox() }
+
+        assertEquals(0x80, Color.alpha(callBox.backgroundTintList!!.defaultColor))
+        assertEquals(0xFF, Color.alpha(meetingBox.backgroundTintList!!.defaultColor))
     }
 
     @Test
@@ -212,7 +231,7 @@ class WidgetViewsDeviceTest {
     @Test
     fun drawingAgainOnTheSameViewsDoesNotDuplicateThem() {
         // Launchers may apply new views on top of the previous ones.
-        val views = WidgetViews(targetContext, WidgetSettings().backgroundAlpha, null).build(layout)
+        val views = WidgetViews(targetContext, WidgetSettings(), null).build(layout)
         val root = onMain { views.apply(targetContext, FrameLayout(targetContext)).also { views.reapply(targetContext, it) } }
 
         assertEquals(2, root.childrenOf(R.id.headers).size)

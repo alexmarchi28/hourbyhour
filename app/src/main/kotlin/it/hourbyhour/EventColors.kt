@@ -6,17 +6,21 @@ import kotlin.math.pow
 data class EventColors(val lightFill: Int, val lightText: Int, val darkFill: Int, val darkText: Int)
 
 /**
- * The colors of an event as Google Calendar shows them. Past events are faded towards the widget
- * background of each theme, so the upcoming ones stand out.
+ * The colors of an event as Google Calendar shows them. Past events are half transparent, so the
+ * upcoming ones stand out: the widget background shows through, and since the launcher resolves its
+ * color nothing here depends on it (it follows the system palette at once, see WidgetViews).
  */
-fun eventColors(providerColor: Int, past: Boolean, lightBackground: Int, darkBackground: Int): EventColors {
-    fun fill(dark: Boolean): Int {
+fun eventColors(providerColor: Int, past: Boolean): EventColors {
+    fun colors(dark: Boolean): Pair<Int, Int> {
         val color = GoogleColors.forDisplay(providerColor, dark)
-        return if (past) blend(color, if (dark) darkBackground else lightBackground, 0.5f) else color
+        if (!past) return color to textOn(color)
+        // The text suits the faded look on a typical background of the theme.
+        val faded = blend(color, if (dark) DARK_BACKGROUND else LIGHT_BACKGROUND, PAST_FADE)
+        return withAlpha(color, PAST_ALPHA) to textOn(faded)
     }
-    val light = fill(dark = false)
-    val dark = fill(dark = true)
-    return EventColors(light, textOn(light), dark, textOn(dark))
+    val (lightFill, lightText) = colors(dark = false)
+    val (darkFill, darkText) = colors(dark = true)
+    return EventColors(lightFill, lightText, darkFill, darkText)
 }
 
 /** Dark text on light colors, white text on dark ones. */
@@ -39,6 +43,14 @@ private fun luminance(color: Int): Double {
     }
     return 0.2126 * linear(color shr 16 and 0xFF) + 0.7152 * linear(color shr 8 and 0xFF) + 0.0722 * linear(color and 0xFF)
 }
+
+/** How much past events fade: their fill keeps half its opacity. */
+private const val PAST_FADE = 0.5f
+private const val PAST_ALPHA = 0x80
+
+/** Backgrounds of the widget in each theme, only to choose the text of past events. */
+private const val LIGHT_BACKGROUND = 0xFFFFFFFF.toInt()
+private const val DARK_BACKGROUND = 0xFF202124.toInt()
 
 private const val OPAQUE = 0xFF000000.toInt()
 private const val DARK_TEXT = 0xFF202124.toInt()

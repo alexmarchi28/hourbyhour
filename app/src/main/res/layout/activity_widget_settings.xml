@@ -53,6 +53,21 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp" />
 
+            <Switch
+                android:id="@+id/system_colors"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/system_colors"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/system_colors_hint"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

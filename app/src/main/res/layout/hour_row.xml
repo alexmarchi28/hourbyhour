@@ -20,6 +20,7 @@
         android:translationY="-6sp" />
 
     <FrameLayout
+        android:id="@+id/hour_line"
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_weight="1"

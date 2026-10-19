@@ -7,29 +7,33 @@ import android.widget.RemoteViews
 
 /**
  * Turns a [WidgetLayout] into RemoteViews. The layouts are placed by weights (see event.xml), so
- * they fill the real size of the widget whatever size the launcher reports. Static colors come from
- * resources and follow the system theme. Event colors are set for both themes, so the launcher can
- * switch them as soon as the theme changes.
+ * they fill the real size of the widget whatever size the launcher reports. The colors of the
+ * [WidgetPalette] are set as resources, which the launcher resolves: they follow the system theme
+ * and palette as soon as they change, without a redraw. Event colors are set for both themes, so
+ * the launcher can switch them as soon as the theme changes.
  *
  * All decisions about what to show and where belong in [layoutWidget], which is unit tested.
  * Taps send the pending intents made by [clicks]; without it (in previews) the views do nothing.
  */
 class WidgetViews(
-    private val context: Context,
-    /** The alpha of the background of this widget, see [WidgetSettings.backgroundAlpha]. */
-    private val backgroundAlpha: Int,
+    context: Context,
+    /** The settings of this widget: transparency of the background and colors. */
+    private val settings: WidgetSettings,
     private val clicks: ((ClickTarget) -> PendingIntent)?,
 ) {
     private val packageName = context.packageName
-    private val lightBackground = context.inTheme(dark = false).getColor(R.color.widget_background)
-    private val darkBackground = context.inTheme(dark = true).getColor(R.color.widget_background)
+    private val palette = WidgetPalette.of(settings)
 
     /** The message shown instead of the events when calendar access is missing. */
-    fun message() = RemoteViews(packageName, R.layout.widget_message).apply { tintBackground() }
+    fun message() = RemoteViews(packageName, R.layout.widget_message).apply {
+        paintBackground()
+        setColorStateList(R.id.message, "setTextColor", palette.text)
+    }
 
     fun build(layout: WidgetLayout): RemoteViews {
         val root = RemoteViews(packageName, R.layout.widget)
-        root.tintBackground()
+        root.paintBackground()
+        root.setColor(R.id.grid_bottom, "setBackgroundColor", palette.grid)
         // The launcher may apply these views on top of the previous ones instead of inflating the
         // layout again: without this, every update would add another copy of the content.
         for (container in intArrayOf(R.id.headers, R.id.banners, R.id.hours, R.id.columns)) {
@@ -39,6 +43,7 @@ class WidgetViews(
         for (header in layout.headers) {
             val views = RemoteViews(packageName, if (header.today) R.layout.day_header_today else R.layout.day_header)
             views.setTextViewText(R.id.day_header, header.label)
+            views.setColorStateList(R.id.day_header, "setTextColor", if (header.today) palette.today else palette.text)
             views.setClick(R.id.day_header, header.click)
             root.addView(R.id.headers, views)
         }
@@ -52,11 +57,14 @@ class WidgetViews(
         for (label in layout.hourLabels) {
             val row = RemoteViews(packageName, R.layout.hour_row)
             row.setTextViewText(R.id.hour_label, label)
+            row.setColorStateList(R.id.hour_label, "setTextColor", palette.textSecondary)
+            row.setColor(R.id.hour_line, "setBackgroundColor", palette.grid)
             root.addView(R.id.hours, row)
         }
 
         for (column in layout.columns) {
             val columnViews = RemoteViews(packageName, R.layout.day_column)
+            columnViews.setColor(R.id.column_separator, "setBackgroundColor", palette.grid)
             // Events are clickable views on top of the column: a tap elsewhere reaches the column.
             columnViews.setClick(R.id.day_column, column.click)
             for (box in column.events) columnViews.addView(R.id.day_column, event(box))
@@ -82,6 +90,7 @@ class WidgetViews(
                 R.id.banner_cell,
                 RemoteViews(packageName, R.layout.banner_more).apply {
                     setTextViewText(R.id.banner_more, cell.label)
+                    setColorStateList(R.id.banner_more, "setTextColor", palette.textSecondary)
                 },
             )
             is BannerCell.Empty -> Unit
@@ -114,21 +123,17 @@ class WidgetViews(
     }
 
     /**
-     * The background takes the transparency of this widget. Tinting the rounded background shape,
-     * rather than replacing it, keeps its corners; one color per theme as for the events.
+     * The background layer takes the color of the palette, resolved by the launcher, and the
+     * transparency of this widget. The layer is the rounded background shape, so its corners stay.
      */
-    private fun RemoteViews.tintBackground() {
-        setColorStateList(
-            android.R.id.background,
-            "setBackgroundTintList",
-            ColorStateList.valueOf(withAlpha(lightBackground, backgroundAlpha)),
-            ColorStateList.valueOf(withAlpha(darkBackground, backgroundAlpha)),
-        )
+    private fun RemoteViews.paintBackground() {
+        setColorStateList(android.R.id.background, "setImageTintList", palette.background)
+        setInt(android.R.id.background, "setImageAlpha", settings.backgroundAlpha)
     }
 
     /** One color per theme: RemoteViews applies the one matching the launcher theme. */
     private fun RemoteViews.setEventColors(viewId: Int, providerColor: Int, past: Boolean) {
-        val colors = eventColors(providerColor, past, lightBackground, darkBackground)
+        val colors = eventColors(providerColor, past)
         setColorStateList(
             viewId,
             "setBackgroundTintList",
@@ -144,7 +149,27 @@ class WidgetViews(
         setFloat(outer, "setWeightSum", outerSum)
         setFloat(inner, "setWeightSum", innerSum)
     }
+}
 
+/**
+ * The colors of the widget other than the events and the current time, as color resources. The
+ * Google Calendar look is the default; with [WidgetSettings.systemColors] the widget takes the
+ * system palette (Material You), which follows the wallpaper.
+ */
+enum class WidgetPalette(val background: Int, val text: Int, val textSecondary: Int, val grid: Int, val today: Int) {
+    GOOGLE(R.color.widget_background, R.color.widget_text, R.color.widget_text_secondary, R.color.widget_grid, R.color.widget_today),
+    SYSTEM(
+        R.color.widget_system_background,
+        R.color.widget_system_text,
+        R.color.widget_system_text_secondary,
+        R.color.widget_system_grid,
+        R.color.widget_system_today,
+    ),
+    ;
+
+    companion object {
+        fun of(settings: WidgetSettings) = if (settings.systemColors) SYSTEM else GOOGLE
+    }
 }
 
 /**

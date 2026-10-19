@@ -4,59 +4,75 @@
     a size different from the real one. WidgetViews fills the containers with ids at runtime: they
     must hold only views added at runtime, because they are emptied before each update.
     clipChildren is off along the path of the hour labels, which are shifted up to sit on their line.
+    The background is a layer of its own, so that the launcher resolves its color (WidgetViews sets
+    the color resource and the alpha of each widget); the rounded outline of the root clips the rest.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@android:id/background"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_background"
+    android:background="@drawable/widget_outline"
     android:clipChildren="false"
-    android:clipToOutline="true"
-    android:orientation="vertical"
-    android:padding="@dimen/widget_padding">
+    android:clipToOutline="true">
+
+    <ImageView
+        android:id="@android:id/background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_background" />
 
     <LinearLayout
-        android:id="@+id/headers"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/widget_gutter"
-        android:baselineAligned="false"
-        android:orientation="horizontal" />
-
-    <LinearLayout
-        android:id="@+id/banners"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical" />
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="@dimen/grid_margin_top"
-        android:layout_weight="1"
-        android:clipChildren="false">
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:orientation="vertical"
+        android:padding="@dimen/widget_padding">
 
         <LinearLayout
-            android:id="@+id/hours"
+            android:id="@+id/headers"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipChildren="false"
-            android:orientation="vertical" />
-
-        <!-- Bottom border of the grid. -->
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_gravity="bottom"
-            android:layout_marginStart="@dimen/widget_gutter"
-            android:background="@color/widget_grid" />
-
-        <LinearLayout
-            android:id="@+id/columns"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/widget_gutter"
             android:baselineAligned="false"
             android:orientation="horizontal" />
-    </FrameLayout>
-</LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/banners"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="@dimen/grid_margin_top"
+            android:layout_weight="1"
+            android:clipChildren="false">
+
+            <LinearLayout
+                android:id="@+id/hours"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipChildren="false"
+                android:orientation="vertical" />
+
+            <!-- Bottom border of the grid. -->
+            <FrameLayout
+                android:id="@+id/grid_bottom"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_gravity="bottom"
+                android:layout_marginStart="@dimen/widget_gutter"
+                android:background="@color/widget_grid" />
+
+            <LinearLayout
+                android:id="@+id/columns"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="@dimen/widget_gutter"
+                android:baselineAligned="false"
+                android:orientation="horizontal" />
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>
