@@ -16,6 +16,16 @@
     <color name="widget_now">#D93025</color>
 
     <!--
+        Screens of the app (themes.xml), light theme: the system palette, like the widget. The text
+        colors used by the theme are the selectors in res/color, which fade them when disabled.
+    -->
+    <color name="app_background">@android:color/system_neutral1_10</color>
+    <color name="app_text">@android:color/system_neutral1_900</color>
+    <color name="app_text_muted">@android:color/system_neutral2_700</color>
+    <color name="app_accent">@android:color/system_accent1_600</color>
+    <color name="app_button">@android:color/system_accent1_100</color>
+
+    <!--
         Events of the widget picker preview (widget_preview.xml): the colors that eventColors() gives
         to SampleAgenda.PEACOCK, FLAMINGO and GRAPE in this theme. WidgetPickerPreviewDeviceTest checks them.
     -->
